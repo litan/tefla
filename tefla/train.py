@@ -26,9 +26,11 @@ import logging
               help='parallel or queued.')
 @click.option('--start_epoch', default=1, show_default=True,
               help='Epoch number from which to resume training.')
+@click.option('--resume_lr', default=None, show_default=True,
+              help='Learning rate for resumed training.')
 @click.option('--weights_from', default=None, show_default=True,
               help='Path to initial weights file.')
-def main(model, training_cnf, data_dir, iterator_type, start_epoch, weights_from):
+def main(model, training_cnf, data_dir, iterator_type, start_epoch, resume_lr, weights_from):
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf
@@ -43,7 +45,7 @@ def main(model, training_cnf, data_dir, iterator_type, start_epoch, weights_from
     training_iter, validation_iter = create_training_iters(cnf, data_set, standardizer, model_def.crop_size,
                                                            start_epoch, iterator_type == 'parallel')
     trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
-    trainer.fit(data_set, weights_from, start_epoch, verbose=1, summary_every=10)
+    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1, summary_every=10)
 
 
 if __name__ == '__main__':

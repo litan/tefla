@@ -31,13 +31,13 @@ class SupervisedTrainer(object):
         self.validation_metrics_def = self.cnf.get('validation_scores', [])
         self.clip_norm = clip_norm
 
-    def fit(self, data_set, weights_from=None, start_epoch=1, summary_every=10, verbose=0):
+    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0):
         self._setup_predictions_and_loss()
         self._setup_optimizer()
         self._setup_summaries()
         self._setup_misc()
         self._print_info(data_set, verbose)
-        self._train_loop(data_set, weights_from, start_epoch, summary_every,
+        self._train_loop(data_set, weights_from, start_epoch, resume_lr, summary_every,
                          verbose)
 
     def _setup_misc(self):
@@ -80,7 +80,7 @@ class SupervisedTrainer(object):
 
         _print_layer_shapes(self.training_end_points)
 
-    def _train_loop(self, data_set, weights_from, start_epoch, summary_every,
+    def _train_loop(self, data_set, weights_from, start_epoch, resume_lr, summary_every,
                     verbose):
         training_X, training_y, validation_X, validation_y = \
             data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
@@ -100,18 +100,18 @@ class SupervisedTrainer(object):
                 weights_from = "weights/model-epoch-%d.ckpt" % (start_epoch - 1)
 
             sess.run(tf.initialize_all_variables())
+            batch_iters_per_epoch = int(round(len(data_set.training_X) / self.training_iterator.batch_size))
+            learning_rate_value = self.lr_policy.initial_lr
             if weights_from:
                 _load_variables(sess, saver, weights_from)
+                learning_rate_value = self.lr_policy.resume_lr(start_epoch, batch_iters_per_epoch, resume_lr)
 
-            learning_rate_value = self.lr_policy.initial_lr
             logger.info("Initial learning rate: %f " % learning_rate_value)
             train_writer, validation_writer = _create_summary_writer(self.cnf.get('summary_dir', '/tmp/tefla-summary'),
                                                                      sess)
 
             seed_delta = 100
             training_history = []
-            batch_iter_idx = 1
-            batch_iters_per_epoch = len(data_set.training_X) // self.training_iterator.batch_size
             for epoch in xrange(start_epoch, self.num_epochs + 1):
                 np.random.seed(epoch + seed_delta)
                 tf.set_random_seed(epoch + seed_delta)
@@ -119,7 +119,7 @@ class SupervisedTrainer(object):
                 training_losses = []
                 batch_train_sizes = []
 
-                for batch_num, (Xb, yb) in enumerate(self.training_iterator(training_X, training_y)):
+                for batch_num, (Xb, yb) in enumerate(self.training_iterator(training_X, training_y), start=1):
                     feed_dict_train = {self.inputs: Xb, self.target: self._adjust_ground_truth(yb),
                                        self.learning_rate: learning_rate_value}
 
@@ -151,9 +151,9 @@ class SupervisedTrainer(object):
                         sess.run(self.update_ops, feed_dict=feed_dict_train)
                         logger.debug('3. Running update ops done.')
 
+                    batch_iter_idx = (epoch - 1) * batch_iters_per_epoch + batch_num
                     learning_rate_value = self.lr_policy.batch_update(learning_rate_value, batch_iter_idx,
                                                                       batch_iters_per_epoch)
-                    batch_iter_idx += 1
                     logger.debug('4. Training batch %d done.' % batch_num)
 
                 epoch_training_loss = np.average(training_losses, weights=batch_train_sizes)
@@ -173,7 +173,7 @@ class SupervisedTrainer(object):
                 epoch_validation_metrics = []
                 batch_validation_sizes = []
                 for batch_num, (validation_Xb, validation_yb) in enumerate(
-                        self.validation_iterator(validation_X, validation_y)):
+                        self.validation_iterator(validation_X, validation_y), start=1):
                     feed_dict_validation = {self.validation_inputs: validation_Xb,
                                             self.target: self._adjust_ground_truth(validation_yb)}
                     logger.debug('6. Loading batch %d validation data done.' % batch_num)
@@ -243,7 +243,7 @@ class SupervisedTrainer(object):
 
                 learning_rate_value = self.lr_policy.epoch_update(learning_rate_value, training_history)
                 if verbose > 0:
-                    logger.info("Learning rate: %f " % learning_rate_value)
+                    logger.info("Next epoch learning rate: %f " % learning_rate_value)
                 logger.debug('10. Epoch done. [%d]' % epoch)
 
             train_writer.close()

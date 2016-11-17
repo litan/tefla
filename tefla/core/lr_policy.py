@@ -34,6 +34,15 @@ class StepDecayPolicy(NoBatchUpdateMixin):
         self.schedule = schedule
         self.initial_lr = self.schedule[0]
 
+    def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
+        return resume_lr if resume_lr is not None else self._lr_for_epoch(start_epoch)
+
+    def _lr_for_epoch(self, epoch):
+        skeys = sorted(self.schedule.keys())
+        next_step = next((x for x in skeys if x > epoch), 1)
+        prev_step_index = skeys.index(next_step) - 1
+        return self.schedule[skeys[prev_step_index]]
+
     def epoch_update(self, learning_rate, training_history):
         epoch_info = training_history[-1]
         epoch = epoch_info['epoch']
@@ -54,6 +63,11 @@ class PolyDecayPolicy(InitialLrMixin, NoEpochUpdateMixin):
         self.power = power
         self.max_epoch = max_epoch
         super(PolyDecayPolicy, self).__init__(initial_lr)
+
+    def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
+        if resume_lr is not None:
+            self.initial_lr = resume_lr
+        return self.batch_update(None, (start_epoch - 1) * n_iter_per_epoch, n_iter_per_epoch)
 
     def batch_update(self, learning_rate, iter_idx, n_iter_per_epoch):
         new_learning_rate = self.initial_lr * math.pow(1 - iter_idx / float(self.max_epoch * n_iter_per_epoch),
