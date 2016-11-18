@@ -23,7 +23,7 @@ class PredictSessionMixin(object):
         pass
 
 
-class Predictor(PredictSessionMixin):
+class OneCropPredictor(PredictSessionMixin):
     def __init__(self, model, cnf, weights_from, prediction_iterator):
         self.model = model
         self.cnf = cnf
@@ -32,7 +32,7 @@ class Predictor(PredictSessionMixin):
         end_points_predict = model(is_training=False, reuse=None)
         self.inputs = end_points_predict['inputs']
         self.predictions = end_points_predict['predictions']
-        super(Predictor, self).__init__(weights_from)
+        super(OneCropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess, xform=None, crop_bbox=None):
         tic = time.time()
@@ -51,7 +51,7 @@ class QuasiPredictor(PredictSessionMixin):
         self.number_of_transforms = number_of_transforms
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = Predictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
         super(QuasiPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
@@ -77,7 +77,7 @@ class CropPredictor(PredictSessionMixin):
         self.im_size = im_size
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = Predictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
         super(CropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
