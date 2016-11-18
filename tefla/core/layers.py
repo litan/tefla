@@ -62,7 +62,7 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
             output = activation(output, reuse=reuse, trainable=trainable)
 
         if dropout_p:
-            output = dropout(output, dropout_p, is_training=is_training)
+            output = dropout(output, drop_p=dropout_p, is_training=is_training)
 
         return _collect_named_outputs(outputs_collections, name, output)
 

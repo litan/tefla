@@ -15,6 +15,7 @@ class PredictSessionMixin(object):
     def predict(self, X):
         saver = tf.train.Saver()
         with tf.Session() as sess:
+            print('Loading weights from: %s' % self.weights_from)
             saver.restore(sess, self.weights_from)
             return self._real_predict(X, sess)
 
@@ -70,8 +71,10 @@ class QuasiPredictor(PredictSessionMixin):
 
 
 class CropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_crops=10):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size, number_of_crops=10):
         self.number_of_crops = number_of_crops
+        self.crop_size = crop_size
+        self.im_size = im_size
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
         self.predictor = Predictor(model, cnf, weights_from, prediction_iterator)
@@ -79,8 +82,8 @@ class CropPredictor(PredictSessionMixin):
 
     def _real_predict(self, X, sess):
         if self.number_of_crops > 1:
-            crop_size = np.array((self.cnf['w'], self.cnf['h']))
-            im_size = np.array(self.cnf['im_size'])
+            crop_size = np.array(self.crop_size)
+            im_size = np.array(self.im_size)
             bboxs = util.get_bbox_10crop(crop_size, im_size)
             multiple_predictions = []
             for i, bbox in enumerate(bboxs, start=1):
