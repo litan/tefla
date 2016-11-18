@@ -30,12 +30,14 @@ import logging
               help='Learning rate for resumed training.')
 @click.option('--weights_from', default=None, show_default=True,
               help='Path to initial weights file.')
-def main(model, training_cnf, data_dir, iterator_type, start_epoch, resume_lr, weights_from):
+@click.option('--clean', is_flag=True,
+              help='Clean out training log and summary dir.')
+def main(model, training_cnf, data_dir, iterator_type, start_epoch, resume_lr, weights_from, clean):
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf
 
-    util.init_logging('train.log', file_log_level=logging.INFO, console_log_level=logging.INFO)
+    util.init_logging('train.log', file_log_level=logging.INFO, console_log_level=logging.INFO, clean=clean)
     if weights_from:
         weights_from = str(weights_from)
 
@@ -45,7 +47,7 @@ def main(model, training_cnf, data_dir, iterator_type, start_epoch, resume_lr, w
     training_iter, validation_iter = create_training_iters(cnf, data_set, standardizer, model_def.crop_size,
                                                            start_epoch, iterator_type == 'parallel')
     trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
-    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1, summary_every=10)
+    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1, summary_every=10, clean=clean)
 
 
 if __name__ == '__main__':

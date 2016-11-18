@@ -3,13 +3,13 @@ from __future__ import division, print_function, absolute_import
 import logging
 import os
 import pprint
+import shutil
 import time
 
 import numpy as np
 import tensorflow as tf
-
-from tefla.da.iterator import BatchIterator
 from tefla.core.lr_policy import NoDecayPolicy
+from tefla.da.iterator import BatchIterator
 
 logger = logging.getLogger('tefla')
 
@@ -31,14 +31,14 @@ class SupervisedTrainer(object):
         self.validation_metrics_def = self.cnf.get('validation_scores', [])
         self.clip_norm = clip_norm
 
-    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0):
+    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0, clean=False):
         self._setup_predictions_and_loss()
         self._setup_optimizer()
         self._setup_summaries()
         self._setup_misc()
         self._print_info(data_set, verbose)
         self._train_loop(data_set, weights_from, start_epoch, resume_lr, summary_every,
-                         verbose)
+                         verbose, clean)
 
     def _setup_misc(self):
         self.num_epochs = self.cnf.get('num_epochs', 500)
@@ -81,7 +81,7 @@ class SupervisedTrainer(object):
         _print_layer_shapes(self.training_end_points)
 
     def _train_loop(self, data_set, weights_from, start_epoch, resume_lr, summary_every,
-                    verbose):
+                    verbose, clean):
         training_X, training_y, validation_X, validation_y = \
             data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
         saver = tf.train.Saver(max_to_keep=None)
@@ -108,7 +108,7 @@ class SupervisedTrainer(object):
 
             logger.info("Initial learning rate: %f " % learning_rate_value)
             train_writer, validation_writer = _create_summary_writer(self.cnf.get('summary_dir', '/tmp/tefla-summary'),
-                                                                     sess)
+                                                                     sess, clean)
 
             seed_delta = 100
             training_history = []
@@ -124,7 +124,7 @@ class SupervisedTrainer(object):
                                        self.learning_rate: learning_rate_value}
 
                     logger.debug('1. Loading batch %d data done.' % batch_num)
-                    if (epoch - 1) % summary_every == 0 and batch_num < 10:
+                    if (epoch - 1) % summary_every == 0 and batch_num < 11:
                         logger.debug('2. Running training steps with summary...')
                         training_predictions_e, training_loss_e, summary_str_train, _ = sess.run(
                             [self.training_predictions, self.regularized_training_loss, training_batch_summary_op,
@@ -178,7 +178,7 @@ class SupervisedTrainer(object):
                                             self.target: self._adjust_ground_truth(validation_yb)}
                     logger.debug('6. Loading batch %d validation data done.' % batch_num)
 
-                    if (epoch - 1) % summary_every == 0 and batch_num < 10:
+                    if (epoch - 1) % summary_every == 0 and batch_num < 11:
                         logger.debug('7. Running validation steps with summary...')
                         validation_predictions_e, validation_loss_e, summary_str_validate = sess.run(
                             [self.validation_predictions, self.validation_loss, validation_batch_summary_op],
@@ -371,9 +371,9 @@ def _load_variables(sess, saver, weights_from):
             sess.run(tf.initialize_all_variables())
 
 
-def _create_summary_writer(summary_dir, sess):
-    # if os.path.exists(summary_dir):
-    #     shutil.rmtree(summary_dir)
+def _create_summary_writer(summary_dir, sess, clean):
+    if clean and os.path.exists(summary_dir):
+        shutil.rmtree(summary_dir)
 
     if not os.path.exists(summary_dir):
         os.makedirs(summary_dir)

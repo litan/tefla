@@ -162,7 +162,7 @@ def dump_vars(sess):
     print("-----------")
 
 
-def init_logging(file_name, file_log_level, console_log_level):
+def init_logging(file_name, file_log_level, console_log_level, clean=False):
     import sys
     logger = logging.getLogger('tefla')
     logger.setLevel(logging.DEBUG)
@@ -174,7 +174,8 @@ def init_logging(file_name, file_log_level, console_log_level):
     h1.setFormatter(formatter)
     logger.addHandler(h1)
 
-    h2 = logging.FileHandler(file_name, mode='a')
+    mode = 'w' if clean else 'a'
+    h2 = logging.FileHandler(file_name, mode=mode)
     h2.setLevel(file_log_level)
     h2.setFormatter(formatter)
     logger.addHandler(h2)
