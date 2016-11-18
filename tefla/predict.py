@@ -2,10 +2,10 @@ import os
 
 import click
 import numpy as np
-
 from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
 from tefla.core.prediction import QuasiPredictor
 from tefla.da import data
+from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
 
 
@@ -32,7 +32,7 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     weights_from = str(weights_from)
     images = data.get_image_files(predict_dir)
 
-    standardizer = cnf.get('standardizer', None)
+    standardizer = cnf.get('standardizer', NoOpStandardizer())
 
     preprocessor = convert_preprocessor(image_size) if convert else None
     prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)

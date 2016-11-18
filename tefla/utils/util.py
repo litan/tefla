@@ -299,28 +299,8 @@ def get_variable_collections(variables_collections, name):
     return variable_collections
 
 
-def load_variables(self, sess, saver, weights_from):
-    logger = logging.getLogger('tefla')
-    logger.info("---Loading session/weights from %s..." % weights_from)
-    try:
-        saver.restore(sess, weights_from)
-    except Exception as e:
-        logger.info("Unable to restore entire session from checkpoint. Error: %s." % e.message)
-        logger.info("Doing selective restore.")
-        try:
-            reader = tf.train.NewCheckpointReader(weights_from)
-            names_to_restore = set(reader.get_variable_to_shape_map().keys())
-            variables_to_restore = [v for v in tf.all_variables() if v.name[:-2] in names_to_restore]
-            logger.info("Loading %d variables: " % len(variables_to_restore))
-            for var in variables_to_restore:
-                logger.info("Loading: %s %s)" % (var.name, var.get_shape()))
-                restorer = tf.train.Saver([var])
-                try:
-                    restorer.restore(sess, weights_from)
-                except Exception as e:
-                    logger.info("Problem loading: %s -- %s" % (var.name, e.message))
-                    continue
-            logger.info("Loaded session/weights from %s" % weights_from)
-        except Exception:
-            logger.info("Couldn't load session/weights from %s; starting from scratch" % weights_from)
-            sess.run(tf.initialize_all_variables())
+def veryify_args(actual, allowed_keys, msg_prefix):
+    actual_keys = set(actual.keys())
+    extra = list(actual_keys - set(allowed_keys))
+    if len(extra) > 0:
+        raise ValueError("%s %s" % (msg_prefix, extra))

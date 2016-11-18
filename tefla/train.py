@@ -11,6 +11,7 @@ tf.set_random_seed(127)
 from tefla.core.dir_dataset import DataSet
 from tefla.core.iter_ops import create_training_iters
 from tefla.core.training import SupervisedTrainer
+from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
 import logging
 
@@ -42,7 +43,7 @@ def main(model, training_cnf, data_dir, iterator_type, start_epoch, resume_lr, w
         weights_from = str(weights_from)
 
     data_set = DataSet(data_dir, model_def.image_size[0])
-    standardizer = cnf.get('standardizer', None)
+    standardizer = cnf.get('standardizer', NoOpStandardizer())
 
     training_iter, validation_iter = create_training_iters(cnf, data_set, standardizer, model_def.crop_size,
                                                            start_epoch, iterator_type == 'parallel')
