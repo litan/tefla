@@ -91,16 +91,15 @@ class TenCropPredictor(PredictSessionMixin):
         return np.mean(multiple_predictions, axis=0)
 
 
-class EnsemblePredictor(PredictSessionMixin):
-    def __init__(self, predictors, weights_from):
+class EnsemblePredictor(object):
+    def __init__(self, predictors):
         self.predictors = predictors
-        super(EnsemblePredictor, self).__init__(weights_from)
 
-    def _real_predict(self, X, sess):
+    def predict(self, X):
         multiple_predictions = []
         for p in self.predictors:
             print('Ensembler - running predictions using: %s' % p)
-            predictions = p._real_predict(X, sess)
+            predictions = p.predict(X)
             multiple_predictions.append(predictions)
         # Todo: introduce voting policies other than the arithmetic mean below
         return np.mean(multiple_predictions, axis=0)
