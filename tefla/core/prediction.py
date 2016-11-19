@@ -46,13 +46,13 @@ class OneCropPredictor(PredictSessionMixin):
         return data_predictions
 
 
-class QuasiPredictor(PredictSessionMixin):
+class QuasiCropPredictor(PredictSessionMixin):
     def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_transforms):
         self.number_of_transforms = number_of_transforms
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
         self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
-        super(QuasiPredictor, self).__init__(weights_from)
+        super(QuasiCropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
         standardizer = self.prediction_iterator.standardizer
@@ -70,27 +70,36 @@ class QuasiPredictor(PredictSessionMixin):
         return np.mean(multiple_predictions, axis=0)
 
 
-class CropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size, number_of_crops=10):
-        self.number_of_crops = number_of_crops
+class TenCropPredictor(PredictSessionMixin):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size):
         self.crop_size = crop_size
         self.im_size = im_size
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
         self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
-        super(CropPredictor, self).__init__(weights_from)
+        super(TenCropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
-        if self.number_of_crops > 1:
-            crop_size = np.array(self.crop_size)
-            im_size = np.array(self.im_size)
-            bboxs = util.get_bbox_10crop(crop_size, im_size)
-            multiple_predictions = []
-            for i, bbox in enumerate(bboxs, start=1):
-                print('Crop-determinastic iteration: %d' % i)
-                predictions = self.predictor._real_predict(X, sess, crop_bbox=bbox)
-                multiple_predictions.append(predictions)
-            return np.mean(multiple_predictions, axis=0)
-        elif self.number_of_crops == 1:
-            predictions = self.predictor._real_predict(X, sess)
-            return predictions
+        crop_size = np.array(self.crop_size)
+        im_size = np.array(self.im_size)
+        bboxs = util.get_bbox_10crop(crop_size, im_size)
+        multiple_predictions = []
+        for i, bbox in enumerate(bboxs, start=1):
+            print('Crop-determinastic iteration: %d' % i)
+            predictions = self.predictor._real_predict(X, sess, crop_bbox=bbox)
+            multiple_predictions.append(predictions)
+        return np.mean(multiple_predictions, axis=0)
+
+
+class EnsemblePredictor(PredictSessionMixin):
+    def __init__(self, predictors, weights_from):
+        self.predictors = predictors
+        super(EnsemblePredictor, self).__init__(weights_from)
+
+    def _real_predict(self, X, sess):
+        multiple_predictions = []
+        for p in self.predictors:
+            predictions = p._real_predict(X, sess)
+            multiple_predictions.append(predictions)
+        # Todo: introduce voting policies other than the arithmetic mean below
+        return np.mean(multiple_predictions, axis=0)

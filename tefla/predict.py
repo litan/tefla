@@ -3,7 +3,7 @@ import os
 import click
 import numpy as np
 from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
-from tefla.core.prediction import QuasiPredictor
+from tefla.core.prediction import QuasiCropPredictor, TenCropPredictor, OneCropPredictor
 from tefla.da import data
 from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
@@ -23,9 +23,10 @@ from tefla.utils import util
               help='Image size for conversion.')
 @click.option('--sync', is_flag=True,
               help='Do all processing on the calling thread.')
-@click.option('--test_type', default='quasi', help='Specify test type, crop_10 or quasi')
+@click.option('--predict_type', default='quasi', show_default=True,
+              help='Specify predict type: quasi, 1_crop or 10_crop')
 def predict(model, training_cnf, predict_dir, weights_from, dataset_name, convert, image_size, sync,
-            test_type):
+            predict_type):
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf
@@ -37,9 +38,16 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     preprocessor = convert_preprocessor(image_size) if convert else None
     prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)
 
-    if test_type == 'quasi':
-        predictor = QuasiPredictor(model, cnf, weights_from, prediction_iterator, 20)
-        predictions = predictor.predict(images)
+    if predict_type == 'quasi':
+        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20)
+    elif predict_type == '1_crop':
+        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
+    elif predict_type == '10_crop':
+        predictor = TenCropPredictor(model, cnf, weights_from, prediction_iterator, model_def.crop_size[0],
+                                     model_def.image_size[0])
+    else:
+        raise ValueError('Unknown predict_type: %s' % predict_type)
+    predictions = predictor.predict(images)
 
     if not os.path.exists(os.path.join(predict_dir, '..', 'results')):
         os.mkdir(os.path.join(predict_dir, '..', 'results'))
