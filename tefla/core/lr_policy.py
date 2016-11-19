@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import logging
 import math
+import pprint
 
 logger = logging.getLogger('tefla')
 
@@ -35,7 +36,22 @@ class StepDecayPolicy(NoBatchUpdateMixin):
         self.initial_lr = self.schedule[0]
 
     def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
-        return resume_lr if resume_lr is not None else self._lr_for_epoch(start_epoch)
+        if resume_lr is not None:
+            self._update_schedule(resume_lr, start_epoch)
+            return resume_lr
+        else:
+            return self._lr_for_epoch(start_epoch)
+
+    def _update_schedule(self, resume_lr, epoch):
+        skeys = sorted(self.schedule.keys())
+        next_step = next((x for x in skeys if x > epoch), 1)
+        prev_step_index = skeys.index(next_step) - 1
+        prev_lr = self.schedule[skeys[prev_step_index]]
+        lr_ratio = resume_lr / prev_lr
+        for idx in range(prev_step_index + 1, len(skeys)):
+            curr_lr = self.schedule[skeys[idx]]
+            self.schedule[skeys[idx]] = curr_lr * lr_ratio
+        logger.info('Updated step decay schedule: %s' % pprint.pformat(self.schedule))
 
     def _lr_for_epoch(self, epoch):
         skeys = sorted(self.schedule.keys())
@@ -52,7 +68,7 @@ class StepDecayPolicy(NoBatchUpdateMixin):
         return new_learning_rate
 
     def __str__(self):
-        return 'StepDecayPolicy(schedule=%s)' % str(self.schedule)
+        return 'StepDecayPolicy(schedule=%s)' % pprint.pformat(self.schedule)
 
     def __repr__(self):
         return str(self)
