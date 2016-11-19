@@ -24,12 +24,12 @@ class PredictSessionMixin(object):
 
 
 class OneCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, reuse=None):
         self.model = model
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
 
-        end_points_predict = model(is_training=False, reuse=None)
+        end_points_predict = model(is_training=False, reuse=reuse)
         self.inputs = end_points_predict['inputs']
         self.predictions = end_points_predict['predictions']
         super(OneCropPredictor, self).__init__(weights_from)
@@ -47,11 +47,11 @@ class OneCropPredictor(PredictSessionMixin):
 
 
 class QuasiCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_transforms):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_transforms, reuse=None):
         self.number_of_transforms = number_of_transforms
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, reuse)
         super(QuasiCropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
@@ -71,12 +71,12 @@ class QuasiCropPredictor(PredictSessionMixin):
 
 
 class TenCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size, reuse=None):
         self.crop_size = crop_size
         self.im_size = im_size
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, reuse)
         super(TenCropPredictor, self).__init__(weights_from)
 
     def _real_predict(self, X, sess):
@@ -85,7 +85,7 @@ class TenCropPredictor(PredictSessionMixin):
         bboxs = util.get_bbox_10crop(crop_size, im_size)
         multiple_predictions = []
         for i, bbox in enumerate(bboxs, start=1):
-            print('Crop-determinastic iteration: %d' % i)
+            print('Crop-deterministic iteration: %d' % i)
             predictions = self.predictor._real_predict(X, sess, crop_bbox=bbox)
             multiple_predictions.append(predictions)
         return np.mean(multiple_predictions, axis=0)
@@ -99,6 +99,7 @@ class EnsemblePredictor(PredictSessionMixin):
     def _real_predict(self, X, sess):
         multiple_predictions = []
         for p in self.predictors:
+            print('Ensembler - running predictions using: %s' % p)
             predictions = p._real_predict(X, sess)
             multiple_predictions.append(predictions)
         # Todo: introduce voting policies other than the arithmetic mean below
