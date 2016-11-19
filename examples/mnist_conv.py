@@ -1,5 +1,5 @@
 """Trains a simple convolutional net on the MNIST dataset.
-Gets to 99.5% validation set accuracy.
+Gets to 99.4% - 99.6% validation set accuracy depending on training params.
 """
 from __future__ import division, print_function, absolute_import
 
@@ -55,11 +55,11 @@ def model(is_training, reuse):
 training_cnf = {
     'classification': True,
     'validation_scores': [('validation accuracy', util.accuracy_wrapper), ('validation kappa', util.kappa_wrapper)],
-    'num_epochs': 50,
+    'num_epochs': 30,
     'lr_policy': StepDecayPolicy(
         schedule={
-            0: 0.01,
-            30: 0.001,
+            0: 0.001,
+            15: 0.0001,
         }
     ),
     'optimizer': tf.train.AdamOptimizer()
