@@ -283,14 +283,28 @@ class SupervisedTrainer(object):
         self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate_placeholder")
         # Keep old variable around to load old params, till we need this
         self.obsolete_learning_rate = tf.Variable(1.0, trainable=False, name="learning_rate")
-        optimizer = tf.train.MomentumOptimizer(
-            self.learning_rate,
-            momentum=0.9,
-            use_nesterov=True)  # .minimize(regularized_training_loss)
+        optimizer = self._create_optimizer()
         self.grads_and_vars = optimizer.compute_gradients(self.regularized_training_loss, tf.trainable_variables())
         if self.clip_norm:
             self.grads_and_vars = _clip_grad_norms(self.grads_and_vars)
         self.optimizer_step = optimizer.apply_gradients(self.grads_and_vars)
+
+    def _create_optimizer(self):
+        optimizer = self.cnf.get('optimizer')
+        if optimizer is None:
+            optimizer = tf.train.MomentumOptimizer(
+                self.learning_rate,
+                momentum=0.9,
+                use_nesterov=True)
+        else:
+            if hasattr(optimizer, '_learning_rate'):
+                optimizer._learning_rate = self.learning_rate
+            elif hasattr(optimizer, '_lr'):
+                optimizer._lr = self.learning_rate
+            else:
+                raise ValueError("Unknown optimizer")
+
+        return optimizer
 
     def _setup_predictions_and_loss(self):
         if self.classification:

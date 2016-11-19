@@ -61,7 +61,8 @@ training_cnf = {
             0: 0.01,
             30: 0.001,
         }
-    )
+    ),
+    'optimizer': tf.train.AdamOptimizer()
 }
 util.init_logging('train.log', file_log_level=logging.INFO, console_log_level=logging.INFO)
 
