@@ -55,13 +55,14 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
         os.mkdir(os.path.join(predict_dir, '..', 'results', dataset_name))
 
     names = data.get_names(images)
-    image_prediction_prob = np.column_stack([names, predictions])
+    image_prediction_probs = np.column_stack([names, predictions])
     headers = ['score%d' % (i + 1) for i in range(predictions.shape[1])]
     title = np.array(['image'] + headers)
-    image_prediction_prob = np.vstack([title, image_prediction_prob])
-    labels_file_prob = os.path.abspath(
+    image_prediction_probs = np.vstack([title, image_prediction_probs])
+    prediction_probs_file = os.path.abspath(
         os.path.join(predict_dir, '..', 'results', dataset_name, 'predictions.csv'))
-    np.savetxt(labels_file_prob, image_prediction_prob, delimiter=",", fmt="%s")
+    np.savetxt(prediction_probs_file, image_prediction_probs, delimiter=",", fmt="%s")
+    print('Predictions saved to: %s' % prediction_probs_file)
 
 
 if __name__ == '__main__':
