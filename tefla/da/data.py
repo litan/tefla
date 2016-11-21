@@ -13,7 +13,6 @@ import skimage
 import skimage.transform
 from skimage.transform._warps_cy import _warp_fast
 
-from standardizer import *
 from tefla.core.data_load_ops import *
 
 no_augmentation_params = {
@@ -91,6 +90,18 @@ def balance_per_class_indices(y, weights):
                             p=np.array(p) / p.sum())
 
 
+def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False):
+    if flip:
+        shear += 180
+        rotation += 180
+        # shear by 180 degrees is equivalent to rotation by 180 degrees + flip.
+        # So after that we rotate it another 180 degrees to get just the flip.
+
+    tform_augment = skimage.transform.AffineTransform(scale=(1 / zoom[0], 1 / zoom[1]), rotation=np.deg2rad(rotation),
+                                                      shear=np.deg2rad(shear), translation=translation)
+    return tform_augment
+
+
 # internal stuff below
 
 def _load_image_th(img, preprocessor=image_no_preprocessing):
@@ -143,18 +154,6 @@ def _build_center_uncenter_transforms(image_shape):
     tform_uncenter = skimage.transform.SimilarityTransform(translation=-center_shift)
     tform_center = skimage.transform.SimilarityTransform(translation=center_shift)
     return tform_center, tform_uncenter
-
-
-def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False):
-    if flip:
-        shear += 180
-        rotation += 180
-        # shear by 180 degrees is equivalent to rotation by 180 degrees + flip.
-        # So after that we rotate it another 180 degrees to get just the flip.
-
-    tform_augment = skimage.transform.AffineTransform(scale=(1 / zoom[0], 1 / zoom[1]), rotation=np.deg2rad(rotation),
-                                                      shear=np.deg2rad(shear), translation=translation)
-    return tform_augment
 
 
 def _random_perturbation_transform(zoom_range, rotation_range, shear_range, translation_range, do_flip=True,
