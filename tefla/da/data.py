@@ -34,9 +34,9 @@ def load_augmented_images(fnames, preprocessor, w, h, is_training, aug_params=no
 
 def load_augment(fname, preprocessor, w, h, is_training, aug_params=no_augmentation_params, transform=None, bbox=None,
                  fill_mode='constant', fill_mode_cval=0, standardizer=None, save_to_dir=None):
-    """Load augmented image with output shape (w, h, c)
+    """Load augmented image with output shape (h, w, c)
 
-    Default arguments return non augmented image of shape (w, h, c).
+    Default arguments return non augmented image of shape (h, w, c).
     To apply a fixed transform (and color augmentation) specify transform (and color_vec in standardizer).
     To generate a random augmentation specify aug_params (and sigma in standardizer).
     """
@@ -76,7 +76,7 @@ def image_no_preprocessing(fname):
 
 
 def load_images(imgs, preprocessor=image_no_preprocessing):
-    """Loads and returns images in (w, h, c) format"""
+    """Loads and returns images in (h, w, c) format"""
     return np.array([_load_image_th(f, preprocessor).transpose(1, 2, 0) for f in imgs])
 
 
