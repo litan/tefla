@@ -54,7 +54,7 @@ class SupervisedTrainer(object):
         data_set.print_info()
         logger.info('Max epochs: %d' % self.num_epochs)
         if verbose > 0:
-            all_vars = set(tf.all_variables())
+            all_vars = set(tf.global_variables())
             trainable_vars = set(tf.trainable_variables())
             non_trainable_vars = all_vars.difference(trainable_vars)
 
@@ -89,17 +89,17 @@ class SupervisedTrainer(object):
         if not os.path.exists(weights_dir):
             os.mkdir(weights_dir)
 
-        training_batch_summary_op = tf.merge_all_summaries(key=TRAINING_BATCH_SUMMARIES)
-        training_epoch_summary_op = tf.merge_all_summaries(key=TRAINING_EPOCH_SUMMARIES)
-        validation_batch_summary_op = tf.merge_all_summaries(key=VALIDATION_BATCH_SUMMARIES)
-        validation_epoch_summary_op = tf.merge_all_summaries(key=VALIDATION_EPOCH_SUMMARIES)
+        training_batch_summary_op = tf.summary.merge_all(key=TRAINING_BATCH_SUMMARIES)
+        training_epoch_summary_op = tf.summary.merge_all(key=TRAINING_EPOCH_SUMMARIES)
+        validation_batch_summary_op = tf.summary.merge_all(key=VALIDATION_BATCH_SUMMARIES)
+        validation_epoch_summary_op = tf.summary.merge_all(key=VALIDATION_EPOCH_SUMMARIES)
 
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.cnf.get('gpu_memory_fraction', 0.9))
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
             if start_epoch > 1:
                 weights_from = "weights/model-epoch-%d.ckpt" % (start_epoch - 1)
 
-            sess.run(tf.initialize_all_variables())
+            sess.run(tf.global_variables_initializer())
             batch_iters_per_epoch = int(round(len(data_set.training_X) / self.training_iterator.batch_size))
             learning_rate_value = self.lr_policy.initial_lr
             if weights_from:
@@ -254,11 +254,11 @@ class SupervisedTrainer(object):
             self.epoch_loss = tf.placeholder(tf.float32, shape=[], name="epoch_loss")
 
             # Training summaries
-            tf.scalar_summary('learning rate', self.learning_rate, collections=[TRAINING_EPOCH_SUMMARIES])
-            tf.scalar_summary('training (cross entropy) loss', self.epoch_loss,
+            tf.summary.scalar('learning rate', self.learning_rate, collections=[TRAINING_EPOCH_SUMMARIES])
+            tf.summary.scalar('training (cross entropy) loss', self.epoch_loss,
                               collections=[TRAINING_EPOCH_SUMMARIES])
             if len(self.inputs.get_shape()) == 4:
-                tf.image_summary('input', self.inputs, 10, collections=[TRAINING_BATCH_SUMMARIES])
+                tf.summary.image('input', self.inputs, 10, collections=[TRAINING_BATCH_SUMMARIES])
             for key, val in self.training_end_points.iteritems():
                 variable_summaries(val, key, collections=[TRAINING_BATCH_SUMMARIES])
             for var in tf.trainable_variables():
@@ -270,12 +270,12 @@ class SupervisedTrainer(object):
             for key, val in self.validation_end_points.iteritems():
                 variable_summaries(val, key, collections=[VALIDATION_BATCH_SUMMARIES])
 
-            tf.scalar_summary('validation loss', self.epoch_loss, collections=[VALIDATION_EPOCH_SUMMARIES])
+            tf.summary.scalar('validation loss', self.epoch_loss, collections=[VALIDATION_EPOCH_SUMMARIES])
             self.validation_metric_placeholders = []
             for metric_name, _ in self.validation_metrics_def:
                 validation_metric = tf.placeholder(tf.float32, shape=[], name=metric_name.replace(' ', '_'))
                 self.validation_metric_placeholders.append(validation_metric)
-                tf.scalar_summary(metric_name, validation_metric,
+                tf.summary.scalar(metric_name, validation_metric,
                                   collections=[VALIDATION_EPOCH_SUMMARIES])
             self.validation_metric_placeholders = tuple(self.validation_metric_placeholders)
 
@@ -394,20 +394,20 @@ def _create_summary_writer(summary_dir, sess, clean):
         os.mkdir(summary_dir + '/training')
         os.mkdir(summary_dir + '/validation')
 
-    train_writer = tf.train.SummaryWriter(summary_dir + '/training', graph=sess.graph)
-    val_writer = tf.train.SummaryWriter(summary_dir + '/validation', graph=sess.graph)
+    train_writer = tf.summary.FileWriter(summary_dir + '/training', graph=sess.graph)
+    val_writer = tf.summary.FileWriter(summary_dir + '/validation', graph=sess.graph)
     return train_writer, val_writer
 
 
 def variable_summaries(var, name, collections, extensive=True):
     if extensive:
         mean = tf.reduce_mean(var)
-        tf.scalar_summary('mean/' + name, mean, collections=collections, name='var_mean_summary')
+        tf.summary.scalar('mean/' + name, mean, collections=collections)
         stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
-        tf.scalar_summary('stddev/' + name, stddev, collections=collections, name='var_std_summary')
-        tf.scalar_summary('max/' + name, tf.reduce_max(var), collections=collections, name='var_max_summary')
-        tf.scalar_summary('min/' + name, tf.reduce_min(var), collections=collections, name='var_min_summary')
-    return tf.histogram_summary(name, var, collections=collections, name='var_histogram_summary')
+        tf.summary.scalar('stddev/' + name, stddev, collections=collections)
+        tf.summary.scalar('max/' + name, tf.reduce_max(var), collections=collections)
+        tf.summary.scalar('min/' + name, tf.reduce_min(var), collections=collections)
+    return tf.summary.histogram(name, var, collections=collections)
 
 
 def _print_layer_shapes(end_points):
