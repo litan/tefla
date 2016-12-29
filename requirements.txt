@@ -1,6 +1,6 @@
 # pip install this file using: pip install -r requirements.txt
 # Then install tensorflow r0.12
-numpy==1.11.2
+numpy==1.11.3
 matplotlib==1.5.3
 scipy==0.18.0
 pandas==0.18.1
@@ -9,7 +9,7 @@ click==6.6
 scikit-image==0.12.3
 scikit-learn==0.17.1
 six==1.10.0
-setuptools==28.8.0
+setuptools==32.2.0
 jupyter==1.0.0
 ghalton==0.6
 Pillow==2.3.0
