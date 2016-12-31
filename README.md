@@ -4,4 +4,4 @@ Support for data-sets, data-augmentation, models, training, prediction, metrics,
 
 Documentation coming soon...
 
-An active fork of tefla is available here: www.github.com/n3011/tefla. Both projects are evolving independently, with a cross-pollination of ideas.
+An interesting fork of tefla is available here: www.github.com/n3011/tefla. Both projects are evolving independently, with a cross-pollination of ideas.
