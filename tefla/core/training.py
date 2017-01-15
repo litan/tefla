@@ -107,7 +107,7 @@ class SupervisedTrainer(object):
                 learning_rate_value = self.lr_policy.resume_lr(start_epoch, batch_iters_per_epoch, resume_lr)
 
             logger.info("Initial learning rate: %f " % learning_rate_value)
-            train_writer, validation_writer = _create_summary_writer(self.cnf.get('summary_dir', '/tmp/tefla-summary'),
+            train_writer, validation_writer = _create_summary_writer(self.cnf.get('summary_dir'),
                                                                      sess, clean)
 
             seed_delta = 100
@@ -386,6 +386,10 @@ def _load_variables(sess, saver, weights_from):
 
 
 def _create_summary_writer(summary_dir, sess, clean):
+    if summary_dir is None:
+        summary_dir = '/tmp/tefla-summary'
+        clean = True
+
     if clean and os.path.exists(summary_dir):
         shutil.rmtree(summary_dir)
 
@@ -399,7 +403,7 @@ def _create_summary_writer(summary_dir, sess, clean):
     return train_writer, val_writer
 
 
-def variable_summaries(var, name, collections, extensive=True):
+def variable_summaries(var, name, collections, extensive=False):
     if extensive:
         mean = tf.reduce_mean(var)
         tf.summary.scalar('mean/' + name, mean, collections=collections)
