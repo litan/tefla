@@ -34,7 +34,6 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
         W = tf.get_variable(
             name='W',
             shape=shape,
-            dtype=tf.float32,
             initializer=w_init,
             regularizer=w_regularizer,
             trainable=trainable
@@ -45,7 +44,6 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
             b = tf.get_variable(
                 name='b',
                 shape=[n_output],
-                dtype=tf.float32,
                 initializer=tf.constant_initializer(b_init),
                 trainable=trainable
             )
@@ -54,7 +52,7 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
 
         if batch_norm is not None:
             if isinstance(batch_norm, bool):
-                batch_norm = batch_norm_tf
+                batch_norm = batch_norm_lasagne
             batch_norm_args = batch_norm_args or {}
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
@@ -107,7 +105,7 @@ def conv2d(x, n_output_channels, is_training, reuse, trainable=True, filter_size
 
         if batch_norm is not None:
             if isinstance(batch_norm, bool):
-                batch_norm = batch_norm_tf
+                batch_norm = batch_norm_lasagne
             batch_norm_args = batch_norm_args or {}
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
@@ -210,7 +208,7 @@ def batch_norm_lasagne(x, is_training, reuse, trainable=True, decay=0.9, epsilon
         moving_inv_std = tf.get_variable(
             name='moving_inv_std',
             shape=[x.get_shape()[-1]],
-            initializer=tf.ones_initializer,
+            initializer=tf.ones_initializer(),
             trainable=False)
 
         def mean_inv_std_with_update():
