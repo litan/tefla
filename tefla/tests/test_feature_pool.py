@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -64,6 +66,7 @@ def test_max_pool_1d_stride_2_batch_3():
         pooled_x = sess.run(pooled_x_s)
 
     assert_array_equal(expected_pooled_x, pooled_x)
+
 
 if __name__ == '__main__':
     pytest.main([__file__])

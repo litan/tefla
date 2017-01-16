@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -45,7 +47,6 @@ def test_eval_moving_vars():
 
 
 def test_forced_update_moving_vars_and_output():
-    tf.reset_default_graph()
     with tf.Session() as sess:
         height, width = 3, 3
         image_shape = (10, height, width, 3)
@@ -99,6 +100,36 @@ def test_delayed_update_moving_vars():
         with tf.control_dependencies(update_ops):
             barrier = tf.no_op(name='barrier')
         output = control_flow_ops.with_dependencies([barrier], output)
+        # Initialize all variables
+        sess.run(tf.initialize_all_variables())
+        moving_mean = tf.contrib.framework.get_variables('BatchNorm/moving_mean')[0]
+        moving_inv_std = tf.contrib.framework.get_variables('BatchNorm/moving_inv_std')[0]
+        mean, inv_std = sess.run([moving_mean, moving_inv_std])
+        # After initialization moving_mean == 0 and moving_variance == 1.
+        assert_array_almost_equal(mean, [0] * 3)
+        assert_array_almost_equal(inv_std, [1] * 3)
+        for _ in range(10):
+            sess.run([output])
+        mean = moving_mean.eval()
+        inv_std = moving_inv_std.eval()
+        # After 10 updates with decay 0.1 moving_mean == expected_mean and
+        # moving_inv_std == expected_inv_std.
+        assert_array_almost_equal(mean, expected_mean)
+        assert_array_almost_equal(inv_std, expected_inv_std)
+
+
+def test_forced_update_moving_vars():
+    with tf.Session() as sess:
+        epsilon = 1e-5
+        height, width = 3, 3
+        image_shape = (10, height, width, 3)
+        image_values = np.random.rand(*image_shape)
+        expected_mean = np.mean(image_values, axis=(0, 1, 2))
+        expected_inv_std = 1.0 / np.sqrt(np.var(image_values, axis=(0, 1, 2)) + epsilon)
+        images = tf.constant(image_values, shape=image_shape, dtype=tf.float32)
+        decay = 0.1
+        output = batch_norm(images, True, None, decay=decay, epsilon=epsilon, name="BatchNorm",
+                            updates_collections=None)
         # Initialize all variables
         sess.run(tf.initialize_all_variables())
         moving_mean = tf.contrib.framework.get_variables('BatchNorm/moving_mean')[0]
