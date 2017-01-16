@@ -219,7 +219,7 @@ class SupervisedTrainer(object):
                 validation_writer.flush()
                 logger.debug('9. Writing epoch validation summary done.')
 
-                custom_metrics_string = [', %s: %.3f' % (name, epoch_validation_metrics[i]) for i, (name, _) in
+                custom_metrics_string = [', %s: %.4f' % (name, epoch_validation_metrics[i]) for i, (name, _) in
                                          enumerate(self.validation_metrics_def)]
                 custom_metrics_string = ''.join(custom_metrics_string)
 
