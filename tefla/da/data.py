@@ -111,7 +111,10 @@ def _load_image_th(img, preprocessor=image_no_preprocessing):
         # PIL loaded image, size = (w, h)
         # numpy image from PIL image, shape = (h, w, c)
         # after transpose, shape = (c, h, w)
-        return np.array(p_img, dtype=np.float32).transpose(2, 0, 1)
+        np_img = np.array(p_img, dtype=np.float32)
+        if len(np_img.shape) == 2:
+            np_img = np_img.reshape(np_img.shape[0], np_img.shape[1], 1)
+        return np_img.transpose(2, 0, 1)
     elif isinstance(img, np.ndarray):
         return preprocessor(img)
     else:
