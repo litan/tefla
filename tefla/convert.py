@@ -8,6 +8,10 @@ from multiprocessing.pool import Pool
 
 import click
 import numpy as np
+from skimage import filters
+from skimage import measure
+from skimage.color import rgb2gray
+from skimage.morphology import closing, square
 
 from tefla.da import data
 
@@ -15,63 +19,23 @@ N_PROC = cpu_count()
 
 
 def convert(fname, target_size):
+    # print('Processing image: %s' % fname)
     img = Image.open(fname)
-
     blurred = img.filter(ImageFilter.BLUR)
     ba = np.array(blurred)
-    h, w, _ = ba.shape
-
-    if w > 1.2 * h:
-        left_max = ba[:, : w // 32, :].max(axis=(0, 1)).astype(int)
-        right_max = ba[:, - w // 32:, :].max(axis=(0, 1)).astype(int)
-        max_bg = np.maximum(left_max, right_max)
-
-        foreground = (ba > max_bg + 10).astype(np.uint8)
-        bbox = Image.fromarray(foreground).getbbox()
-
-        if bbox is None:
-            print('bbox none for {} (???)'.format(fname))
-        else:
-            left, upper, right, lower = bbox
-            # if we selected less than 80% of the original
-            # height, just crop the square
-            if right - left < 0.8 * h or lower - upper < 0.8 * h:
-                print('bbox too small for {}'.format(fname))
-                bbox = None
-    else:
-        bbox = None
-
-    if bbox is None:
-        bbox = square_bbox(img, fname)
-
-    cropped = img.crop(bbox)
-    resized = cropped.resize([target_size, target_size])
-    return resized
-
-
-def full_bbox(img, fname):
-    print("full bbox conversion done for image: %s" % fname)
-    w, h = img.size
-    left = 0
-    upper = 0
-    right = w
-    lower = h
-    return (left, upper, right, lower)
-
-
-def square_bbox(img, fname):
-    print("square bbox conversion done for image: %s" % fname)
-    w, h = img.size
-    left = max((w - h) // 2, 0)
-    upper = 0
-    right = min(w - (w - h) // 2, w)
-    lower = h
-    return (left, upper, right, lower)
-
-
-def convert_square(fname, target_size):
-    img = Image.open(fname)
-    bbox = square_bbox(img)
+    ba_gray = rgb2gray(ba)
+    val = filters.threshold_otsu(ba_gray)
+    # foreground = (ba_gray > val).astype(np.uint8)
+    foreground = closing(ba_gray > val, square(3))
+    # kernel = morphology.rectangle(5, 5)
+    # foreground = morphology.binary_dilation(foreground, kernel)
+    labels = measure.label(foreground)
+    properties = measure.regionprops(labels)
+    properties = sorted(properties, key=lambda p: p.area, reverse=True)
+    # draw_top_regions(properties, 3)
+    # return ba
+    bbox = properties[0].bbox
+    bbox = (bbox[1], bbox[0], bbox[3], bbox[2])
     cropped = img.crop(bbox)
     resized = cropped.resize([target_size, target_size])
     return resized
@@ -118,11 +82,11 @@ def save(img, fname):
               help="Where to save converted images.")
 @click.option('--test', is_flag=True, default=False, show_default=True,
               help="Convert images one by one and examine them on screen.")
-@click.option('--crop_size', default=256, show_default=True,
+@click.option('--target_size', default=256, show_default=True,
               help="Size of converted images.")
 @click.option('--extension', default='tiff', show_default=True,
               help="Filetype of converted images.")
-def main(directory, convert_directory, test, crop_size, extension):
+def main(directory, convert_directory, test, target_size, extension):
     try:
         os.mkdir(convert_directory)
     except OSError:
@@ -140,7 +104,7 @@ def main(directory, convert_directory, test, crop_size, extension):
         for f, level in zip(filenames, y):
             if level == 1:
                 try:
-                    img = convert(f, crop_size)
+                    img = convert(f, target_size)
                     img.show()
                     Image.open(f).show()
                     real_raw_input = vars(__builtins__).get('raw_input', input)
@@ -160,7 +124,7 @@ def main(directory, convert_directory, test, crop_size, extension):
     args = []
 
     for f in filenames:
-        args.append((convert, (directory, convert_directory, f, crop_size,
+        args.append((convert, (directory, convert_directory, f, target_size,
                                extension)))
 
     for i in range(batches):
