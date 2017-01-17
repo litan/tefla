@@ -2,6 +2,7 @@ import os
 
 import click
 import numpy as np
+
 from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
 from tefla.core.prediction import QuasiCropPredictor, TenCropPredictor, OneCropPredictor
 from tefla.da import data
@@ -63,6 +64,16 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
         os.path.join(predict_dir, '..', 'results', dataset_name, 'predictions.csv'))
     np.savetxt(prediction_probs_file, image_prediction_probs, delimiter=",", fmt="%s")
     print('Predictions saved to: %s' % prediction_probs_file)
+
+    if cnf['classification']:
+        class_predictions = np.argmax(predictions, axis=1)
+        image_class_predictions = np.column_stack([names, class_predictions])
+        title = np.array(['image', 'label'])
+        image_class_predictions = np.vstack([title, image_class_predictions])
+        prediction_class_file = os.path.abspath(
+            os.path.join(predict_dir, '..', 'results', dataset_name, 'predictions_class.csv'))
+        np.savetxt(prediction_class_file, image_class_predictions, delimiter=",", fmt="%s")
+        print('Class predictions saved to: %s' % prediction_class_file)
 
 
 if __name__ == '__main__':
