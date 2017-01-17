@@ -124,7 +124,7 @@ class SupervisedTrainer(object):
                                        self.learning_rate: learning_rate_value}
 
                     logger.debug('1. Loading batch %d data done.' % batch_num)
-                    if (epoch - 1) % summary_every == 0 and batch_num < 11:
+                    if (epoch - 1) % summary_every == 0 and batch_num < 2:
                         logger.debug('2. Running training steps with summary...')
                         training_predictions_e, training_loss_e, summary_str_train, _ = sess.run(
                             [self.training_predictions, self.regularized_training_loss, training_batch_summary_op,
@@ -178,7 +178,7 @@ class SupervisedTrainer(object):
                                             self.target: self._adjust_ground_truth(validation_yb)}
                     logger.debug('6. Loading batch %d validation data done.' % batch_num)
 
-                    if (epoch - 1) % summary_every == 0 and batch_num < 11:
+                    if (epoch - 1) % summary_every == 0 and batch_num < 2:
                         logger.debug('7. Running validation steps with summary...')
                         validation_predictions_e, validation_loss_e, summary_str_validate = sess.run(
                             [self.validation_predictions, self.validation_loss, validation_batch_summary_op],
@@ -261,10 +261,11 @@ class SupervisedTrainer(object):
                 tf.summary.image('input', self.inputs, 10, collections=[TRAINING_BATCH_SUMMARIES])
             for key, val in self.training_end_points.iteritems():
                 variable_summaries(val, key, collections=[TRAINING_BATCH_SUMMARIES])
-            for var in tf.trainable_variables():
-                variable_summaries(var, var.op.name, collections=[TRAINING_BATCH_SUMMARIES])
+            # for var in tf.trainable_variables():
+            #     variable_summaries(var, var.op.name, collections=[TRAINING_BATCH_SUMMARIES])
             for grad, var in self.grads_and_vars:
-                variable_summaries(var, var.op.name + '/grad', collections=[TRAINING_BATCH_SUMMARIES])
+                variable_summaries(var, var.op.name, collections=[TRAINING_BATCH_SUMMARIES])
+                variable_summaries(grad, var.op.name + '/grad', collections=[TRAINING_BATCH_SUMMARIES])
 
             # Validation summaries
             for key, val in self.validation_end_points.iteritems():
