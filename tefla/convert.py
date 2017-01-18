@@ -80,13 +80,11 @@ def save(img, fname):
               help="Directory with original images.")
 @click.option('--convert_directory', default='data/train_res', show_default=True,
               help="Where to save converted images.")
-@click.option('--test', is_flag=True, default=False, show_default=True,
-              help="Convert images one by one and examine them on screen.")
 @click.option('--target_size', default=256, show_default=True,
               help="Size of converted images.")
 @click.option('--extension', default='tiff', show_default=True,
               help="Filetype of converted images.")
-def main(directory, convert_directory, test, target_size, extension):
+def main(directory, convert_directory, target_size, extension):
     try:
         os.mkdir(convert_directory)
     except OSError:
@@ -98,19 +96,19 @@ def main(directory, convert_directory, test, target_size, extension):
                  for f in fn if f.split('.')[-1].lower() in supported_extensions]
     filenames = sorted(filenames)
 
-    if test:
-        names = data.get_names(filenames)
-        y = data.get_labels(names)
-        for f, level in zip(filenames, y):
-            if level == 1:
-                try:
-                    img = convert(f, target_size)
-                    img.show()
-                    Image.open(f).show()
-                    real_raw_input = vars(__builtins__).get('raw_input', input)
-                    real_raw_input('enter for next')
-                except KeyboardInterrupt:
-                    exit(0)
+    # if test:
+    #     names = data.get_names(filenames)
+    #     y = data.get_labels(names)
+    #     for f, level in zip(filenames, y):
+    #         if level == 1:
+    #             try:
+    #                 img = convert(f, target_size)
+    #                 img.show()
+    #                 Image.open(f).show()
+    #                 real_raw_input = vars(__builtins__).get('raw_input', input)
+    #                 real_raw_input('enter for next')
+    #             except KeyboardInterrupt:
+    #                 exit(0)
 
     print("Resizing images in {} to {}, this takes a while."
           "".format(directory, convert_directory))
