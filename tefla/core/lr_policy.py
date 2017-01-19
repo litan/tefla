@@ -37,6 +37,7 @@ class StepDecayPolicy(NoBatchUpdateMixin):
 
     def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
         if resume_lr is not None:
+            resume_lr = float(resume_lr)
             self._update_schedule(resume_lr, start_epoch)
             return resume_lr
         else:
@@ -44,11 +45,14 @@ class StepDecayPolicy(NoBatchUpdateMixin):
 
     def _update_schedule(self, resume_lr, epoch):
         skeys = sorted(self.schedule.keys())
-        next_step = next((x for x in skeys if x > epoch), 1)
-        prev_step_index = skeys.index(next_step) - 1
+        next_step = next((x for x in skeys if x > epoch), None)
+        if next_step is None:
+            prev_step_index = len(skeys) - 1
+        else:
+            prev_step_index = skeys.index(next_step) - 1
         prev_lr = self.schedule[skeys[prev_step_index]]
         lr_ratio = resume_lr / prev_lr
-        for idx in range(prev_step_index + 1, len(skeys)):
+        for idx in range(prev_step_index, len(skeys)):
             curr_lr = self.schedule[skeys[idx]]
             self.schedule[skeys[idx]] = curr_lr * lr_ratio
         logger.info('Updated step decay schedule: %s' % pprint.pformat(self.schedule))
@@ -82,7 +86,7 @@ class PolyDecayPolicy(InitialLrMixin, NoEpochUpdateMixin):
 
     def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
         if resume_lr is not None:
-            self.initial_lr = resume_lr
+            self.initial_lr = float(resume_lr)
         return self.batch_update(None, (start_epoch - 1) * n_iter_per_epoch, n_iter_per_epoch)
 
     def batch_update(self, learning_rate, iter_idx, n_iter_per_epoch):
