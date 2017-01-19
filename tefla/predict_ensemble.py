@@ -4,7 +4,7 @@ import click
 import numpy as np
 
 from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
-from tefla.core.prediction import QuasiCropPredictor, TenCropPredictor, OneCropPredictor
+from tefla.core.prediction import QuasiCropPredictor, EnsemblePredictor
 from tefla.da import data
 from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
@@ -28,26 +28,37 @@ from tefla.utils import util
               help='Specify predict type: quasi, 1_crop or 10_crop')
 def predict(model, training_cnf, predict_dir, weights_from, dataset_name, convert, image_size, sync,
             predict_type):
-    model_def = util.load_module(model)
-    model = model_def.model
-    cnf = util.load_module(training_cnf).cnf
-    weights_from = str(weights_from)
     images = data.get_image_files(predict_dir)
 
-    standardizer = cnf.get('standardizer', NoOpStandardizer())
+    # Form now, hard coded models, cnfs, and weights
+    # Need to take these from program inputs or an ensembling config file
 
-    preprocessor = convert_preprocessor(image_size) if convert else None
-    prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)
+    print('Creating predictor 1')
+    weights_from1 = 'weights.sa/model-epoch-97.ckpt'
+    model1 = 'examples/mnist_model_sa.py'
+    training_cnf1 = 'examples/mnist_cnf.py'
+    model_def1 = util.load_module(model1)
+    model1 = model_def1.model
+    cnf1 = util.load_module(training_cnf1).cnf
+    standardizer = cnf1.get('standardizer', NoOpStandardizer())
+    preprocessor = convert_preprocessor(model_def1.image_size[0]) if convert else None
+    prediction_iterator1 = create_prediction_iter(cnf1, standardizer, model_def1.crop_size, preprocessor, sync)
+    predictor1 = QuasiCropPredictor(model1, cnf1, weights_from1, prediction_iterator1, 1)
 
-    if predict_type == 'quasi':
-        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 1)
-    elif predict_type == '1_crop':
-        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
-    elif predict_type == '10_crop':
-        predictor = TenCropPredictor(model, cnf, weights_from, prediction_iterator, model_def.crop_size[0],
-                                     model_def.image_size[0])
-    else:
-        raise ValueError('Unknown predict_type: %s' % predict_type)
+    print('Creating predictor 2')
+    weights_from2 = 'weights.rv/model-epoch-31.ckpt'
+    model2 = 'examples/mnist_model.py'
+    training_cnf2 = 'examples/mnist_cnf.py'
+    model_def2 = util.load_module(model2)
+    model2 = model_def2.model
+    cnf2 = util.load_module(training_cnf2).cnf
+    standardizer = cnf2.get('standardizer', NoOpStandardizer())
+    preprocessor = convert_preprocessor(model_def2.image_size[0]) if convert else None
+    prediction_iterator2 = create_prediction_iter(cnf2, standardizer, model_def2.crop_size, preprocessor, sync)
+    predictor2 = QuasiCropPredictor(model2, cnf2, weights_from2, prediction_iterator2, 1)
+
+    predictor = EnsemblePredictor([predictor1, predictor2])
+
     predictions = predictor.predict(images)
 
     if not os.path.exists(os.path.join(predict_dir, '..', 'results')):
@@ -65,7 +76,7 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     np.savetxt(prediction_probs_file, image_prediction_probs, delimiter=",", fmt="%s")
     print('Predictions saved to: %s' % prediction_probs_file)
 
-    if cnf['classification']:
+    if cnf1['classification']:
         class_predictions = np.argmax(predictions, axis=1)
         image_class_predictions = np.column_stack([names, class_predictions])
         title = np.array(['image', 'label'])
@@ -74,7 +85,6 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
             os.path.join(predict_dir, '..', 'results', dataset_name, 'predictions_class.csv'))
         np.savetxt(prediction_class_file, image_class_predictions, delimiter=",", fmt="%s")
         print('Class predictions saved to: %s' % prediction_class_file)
-
 
 if __name__ == '__main__':
     predict()

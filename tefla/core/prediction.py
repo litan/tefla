@@ -4,6 +4,8 @@ import time
 
 import numpy as np
 import tensorflow as tf
+from scipy.stats.mstats import gmean
+
 from tefla.da import tta
 from tefla.utils import util
 
@@ -45,7 +47,7 @@ class OneCropPredictor(PredictSessionMixin):
         tic = time.time()
         print('Making %d predictions' % len(X))
         data_predictions = []
-        for X, y in self.prediction_iterator(X, xform=xform, crop_bbox=crop_bbox):
+        for X, y in self.prediction_iterator(X, xform=None, crop_bbox=crop_bbox):
             predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
             data_predictions.append(predictions_e)
         data_predictions = np.vstack(data_predictions)
@@ -114,5 +116,14 @@ class EnsemblePredictor(object):
             print('Ensembler - running predictions using: %s' % p)
             predictions = p.predict(X)
             multiple_predictions.append(predictions)
-        # Todo: introduce voting policies other than the arithmetic mean below
-        return np.mean(multiple_predictions, axis=0)
+            # Todo: introduce voting policies other than the arithmetic mean below
+            # return np.mean(multiple_predictions, axis=0)
+        return gmean(multiple_predictions, axis=0)
+
+    def predict_with_voting(self, X, score_to_classes, vote_combiner):
+        votes = []
+        for i, p in enumerate(self.predictors):
+            print('Ensembler - running predictions using: %s' % p)
+            predictions = p.predict(X)
+            votes.append(score_to_classes[i](predictions))
+        return vote_combiner(votes)
