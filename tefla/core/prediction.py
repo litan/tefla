@@ -47,7 +47,7 @@ class OneCropPredictor(PredictSessionMixin):
         tic = time.time()
         print('Making %d predictions' % len(X))
         data_predictions = []
-        for X, y in self.prediction_iterator(X, xform=None, crop_bbox=crop_bbox):
+        for X, y in self.prediction_iterator(X, xform=xform, crop_bbox=crop_bbox):
             predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
             data_predictions.append(predictions_e)
         data_predictions = np.vstack(data_predictions)

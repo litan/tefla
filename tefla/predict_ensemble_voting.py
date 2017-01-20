@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import mode
 
 from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
-from tefla.core.prediction import QuasiCropPredictor, EnsemblePredictor
+from tefla.core.prediction import QuasiCropPredictor, OneCropPredictor, EnsemblePredictor
 from tefla.da import data
 from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
@@ -44,7 +44,8 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     standardizer = cnf1.get('standardizer', NoOpStandardizer())
     preprocessor = convert_preprocessor(model_def1.image_size[0]) if convert else None
     prediction_iterator1 = create_prediction_iter(cnf1, standardizer, model_def1.crop_size, preprocessor, sync)
-    predictor1 = QuasiCropPredictor(model1, cnf1, weights_from1, prediction_iterator1, 1)
+    # predictor1 = QuasiCropPredictor(model1, cnf1, weights_from1, prediction_iterator1, 20)
+    predictor1 = OneCropPredictor(model1, cnf1, weights_from1, prediction_iterator1)
 
     print('Creating predictor 2')
     weights_from2 = 'weights.rv/model-epoch-31.ckpt'
@@ -56,7 +57,8 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     standardizer = cnf2.get('standardizer', NoOpStandardizer())
     preprocessor = convert_preprocessor(model_def2.image_size[0]) if convert else None
     prediction_iterator2 = create_prediction_iter(cnf2, standardizer, model_def2.crop_size, preprocessor, sync)
-    predictor2 = QuasiCropPredictor(model2, cnf2, weights_from2, prediction_iterator2, 1)
+    # predictor2 = QuasiCropPredictor(model2, cnf2, weights_from2, prediction_iterator2, 20)
+    predictor2 = OneCropPredictor(model2, cnf2, weights_from2, prediction_iterator2)
 
     predictor = EnsemblePredictor([predictor1, predictor2])
 

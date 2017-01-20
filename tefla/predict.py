@@ -40,7 +40,7 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)
 
     if predict_type == 'quasi':
-        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 1)
+        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20)
     elif predict_type == '1_crop':
         predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
     elif predict_type == '10_crop':
