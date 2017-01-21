@@ -1,6 +1,17 @@
 # Tefla
-Simple end-to-end deep learning with tensorflow.  
-Support for data-sets, data-augmentation, models, training, prediction, metrics, and serving.
+Simple end-to-end deep learning with tensorflow.
+
+Support for:
+* Data setup
+ * Batch preprocessing and data layout
+* Training
+ * Model definition DSL
+ * Training config DSL
+ * Data loading with data-augmentation and rebalancing
+ * Training loop
+* Tensorboard visualization of epoch metrics, augmented images, model graph, and layer activations, weights and gradients
+* Prediction
+* Metrics
 
 Documentation coming soon...
 
