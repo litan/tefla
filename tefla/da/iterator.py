@@ -140,20 +140,25 @@ class ParallelDAIterator(QueuedDAIterator):
                  aug_params=data.no_augmentation_params, fill_mode='constant', fill_mode_cval=0, standardizer=None,
                  save_to_dir=None):
         self.pool = multiprocessing.Pool()
+        self.num_image_channels = None
         super(ParallelDAIterator, self).__init__(batch_size, shuffle, preprocessor, crop_size, is_training, aug_params,
                                                  fill_mode, fill_mode_cval, standardizer, save_to_dir)
 
     def transform(self, Xb, yb):
         shared_array_name = str(uuid4())
+        fnames, labels = Xb, yb
+        args = []
+        da_args = self.da_args()
+        for i, fname in enumerate(fnames):
+            args.append((i, shared_array_name, fname, da_args))
+
+        if self.num_image_channels is None:
+            test_img = data.load_augment(fnames[0], **da_args)
+            self.num_image_channels = test_img.shape[-1]
+
         try:
             shared_array = SharedArray.create(
-                shared_array_name, [len(Xb), self.w, self.h, 1], dtype=np.float32)
-
-            fnames, labels = Xb, yb
-            args = []
-            da_args = self.da_args()
-            for i, fname in enumerate(fnames):
-                args.append((i, shared_array_name, fname, da_args))
+                shared_array_name, [len(Xb), self.w, self.h, self.num_image_channels], dtype=np.float32)
 
             self.pool.map(load_shared, args)
             Xb = np.array(shared_array, dtype=np.float32)

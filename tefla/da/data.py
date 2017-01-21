@@ -113,7 +113,7 @@ def _load_image_th(img, preprocessor=image_no_preprocessing):
         # after transpose, shape = (c, h, w)
         np_img = np.array(p_img, dtype=np.float32)
         if len(np_img.shape) == 2:
-            np_img = np_img.reshape(np_img.shape[0], np_img.shape[1], 1)
+            np_img = np.expand_dims(np_img, axis=2)
         return np_img.transpose(2, 0, 1)
     elif isinstance(img, np.ndarray):
         return preprocessor(img)
