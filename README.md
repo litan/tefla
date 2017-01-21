@@ -9,8 +9,9 @@ Support for:
  * Training config DSL
  * Data loading with data-augmentation and rebalancing
  * Training loop
+ * Pluggable learning rate decay policies
 * Tensorboard visualization of epoch metrics, augmented images, model graph, and layer activations, weights and gradients
-* Prediction
+* Prediction (with ensembling via mean score or voting)
 * Metrics
 
 Documentation is coming soon. For now, the [mnist example(s)][1] can help you to get started.
