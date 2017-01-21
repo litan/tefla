@@ -20,7 +20,7 @@ validation_images = mnist[1].images.reshape(-1, height, width)
 validation_labels = mnist[1].labels
 
 test_images = mnist[2].images.reshape(-1, height, width)
-test_labels = mnist[1].labels
+test_labels = mnist[2].labels
 
 base_dir = '/media/lalit/data/mnist/images/'
 

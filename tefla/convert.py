@@ -96,20 +96,6 @@ def main(directory, convert_directory, target_size, extension):
                  for f in fn if f.split('.')[-1].lower() in supported_extensions]
     filenames = sorted(filenames)
 
-    # if test:
-    #     names = data.get_names(filenames)
-    #     y = data.get_labels(names)
-    #     for f, level in zip(filenames, y):
-    #         if level == 1:
-    #             try:
-    #                 img = convert(f, target_size)
-    #                 img.show()
-    #                 Image.open(f).show()
-    #                 real_raw_input = vars(__builtins__).get('raw_input', input)
-    #                 real_raw_input('enter for next')
-    #             except KeyboardInterrupt:
-    #                 exit(0)
-
     print("Resizing images in {} to {}, this takes a while."
           "".format(directory, convert_directory))
 
