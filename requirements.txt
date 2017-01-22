@@ -1,4 +1,13 @@
-# pip install this file using: pip install -r requirements.txt
+#Make sure you have installed OS Level Dependencies
+# sudo apt-get install build-essential
+# sudo apt-get install python-dev
+#Matplotlib prerequisite
+# sudo apt-get install pkg-config libpng-dev libfreetype6-dev
+#Scipy prerequisite
+# sudo apt-get install gfortran libopenblas-dev liblapack-dev
+#Pillow prerequisite
+# sudo apt-get install libjpeg-dev
+#pip install this file using: pip install -r requirements.txt
 # Then install tensorflow r0.12
 numpy==1.11.3
 matplotlib==1.5.3
