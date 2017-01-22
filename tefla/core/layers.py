@@ -27,7 +27,7 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
     if len(x.get_shape()) != 2:
         x = _flatten(x)
 
-    n_input = x.get_shape().as_list()[1]
+    n_input = helper.get_input_shape(x)[1]
 
     with tf.variable_scope(name, reuse=reuse):
         shape = [n_input, n_output] if hasattr(w_init, '__call__') else None
