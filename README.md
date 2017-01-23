@@ -17,6 +17,8 @@ Tefla contains [command line scripts][10] to do batch preprocessing, training, p
 
 Documentation is coming soon. For now, the [mnist example(s)][11] can help you to get started.
 
+Tefla is very much a work in progress. Contributions are welcome!
+
 An interesting fork of tefla is available here: www.github.com/n3011/tefla. Both projects are evolving independently, with a cross-pollination of ideas.
 
 [1]: https://github.com/litan/tefla/blob/master/tefla/convert.py
