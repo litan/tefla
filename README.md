@@ -13,7 +13,7 @@ Tefla is a deep learning mini-framework that sits on top of Tensorflow. Tefla's 
 * [Prediction][8] (with ensembling via mean score or voting)
 * [Metrics][9] on prediction outputs
 
-Tefla contains [command line scripts][10] to do batch preprocessing, training, prediction, and metrics, thus providing a simple yet powerful deep learning workflow.
+Tefla contains [command line scripts][10] to do batch preprocessing, training, prediction, and metrics, thus supporting a simple yet powerful deep learning workflow.
 
 Documentation is coming soon. For now, the [mnist example(s)][11] can help you to get started.
 
