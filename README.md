@@ -1,17 +1,18 @@
 # Tefla
 Tefla is a deep learning mini-framework that sits on top of Tensorflow. Tefla's primary goal is to enable simple, stable, end-to-end deep learning. This means that Tefla supports:
 * Data setup
- * [Batch preprocessing][1] and data layout
+ * [Batch preprocessing][1] and [data layout][12].
 * Training
- * A [model definition DSL][2]
- * A [training config DSL][3]
- * [Data loading][4] with [data-augmentation][5] and rebalancing
- * [Training][6] with support for visualization, logging, custom metrics, and most importantly - resumption of training from an earlier epoch with a new learning rate
- * Pluggable [learning rate decay policies][7]
- * Stability and solidity - which translates to days and weeks of training without memory blowup and epoch time degradations
-* Tensorboard visualization of epoch metrics, augmented images, model graphs, and layer activations, weights and gradients
-* [Prediction][8] (with ensembling via mean score or voting)
-* [Metrics][9] on prediction outputs
+ * A [model definition DSL][2].
+ * A [training config DSL][3].
+ * [Data loading][4] with [data-augmentation][5] and rebalancing.
+ * [Training][6] with support for visualization, logging, custom metrics, and most importantly - resumption of training from an earlier epoch with a new learning rate.
+ * Pluggable [learning rate decay policies][7].
+ * Stability and solidity - which translates to days and weeks of training without memory blowup and epoch time degradations.
+* Tensorboard visualization of epoch metrics, augmented images, model graphs, and layer activations, weights and gradients.
+* [Prediction][8] (with ensembling via mean score or voting).
+* [Metrics][9] on prediction outputs.
+* Serving of models via a REST API (*coming soon*).
 
 Tefla contains [command line scripts][10] to do batch preprocessing, training, prediction, and metrics, thus supporting a simple yet powerful deep learning workflow.
 
@@ -32,3 +33,4 @@ An interesting fork of tefla is available here: www.github.com/n3011/tefla. Both
 [9]: https://github.com/litan/tefla/blob/master/tefla/metrics.py
 [10]: https://github.com/litan/tefla/blob/master/tefla/
 [11]: https://github.com/litan/tefla/tree/master/examples/mnist
+[12]: https://github.com/litan/tefla/blob/master/tefla/core/dir_dataset.py
