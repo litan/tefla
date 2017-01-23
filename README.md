@@ -3,15 +3,15 @@ Tefla is a deep learning mini-framework that sits on top of Tensorflow. Tefla's 
 * Data setup
  * [Batch preprocessing][1] and data layout
 * Training
- * A [Model definition DSL][2]
- * A [Training config DSL][3]
+ * A [model definition DSL][2]
+ * A [training config DSL][3]
  * [Data loading][4] with [data-augmentation][5] and rebalancing
- * [Training][6] with visualization, logging, and custom metrics, and most importantly - resumption of training from an earlier epoch with a new learning rate
+ * [Training][6] with support for visualization, logging, custom metrics, and most importantly - resumption of training from an earlier epoch with a new learning rate
  * Pluggable [learning rate decay policies][7]
- * Stability and solidity - days and weeks of training without memory blowup and epoch time degradations
-* Tensorboard visualization of epoch metrics, augmented images, model graph, and layer activations, weights and gradients
+ * Stability and solidity - which translates to days and weeks of training without memory blowup and epoch time degradations
+* Tensorboard visualization of epoch metrics, augmented images, model graphs, and layer activations, weights and gradients
 * [Prediction][8] (with ensembling via mean score or voting)
-* [Metrics] on prediction outputs[9]
+* [Metrics][9] on prediction outputs
 
 Tefla contains [command line scripts][10] to do batch preprocessing, training, prediction, and metrics, thus providing a simple yet powerful deep learning workflow.
 
