@@ -162,6 +162,28 @@ def dump_vars(sess):
     print("-----------")
 
 
+def show_vars():
+    all_vars = set(tf.global_variables())
+    trainable_vars = set(tf.trainable_variables())
+    non_trainable_vars = all_vars.difference(trainable_vars)
+
+    print("\n---Trainable vars in model:")
+    name_shapes = map(lambda v: (v.name, v.get_shape()), trainable_vars)
+    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
+        print('%s %s' % (n, s))
+
+    print("\n---Non Trainable vars in model:")
+    name_shapes = map(lambda v: (v.name, v.get_shape()), non_trainable_vars)
+    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
+        print('%s %s' % (n, s))
+
+    local_vars = set(tf.local_variables())
+    print("\n---Local vars in model:")
+    name_shapes = map(lambda v: (v.name, v.get_shape()), local_vars)
+    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
+        print('%s %s' % (n, s))
+
+
 def init_logging(file_name, file_log_level, console_log_level, clean=False):
     import sys
     logger = logging.getLogger('tefla')
