@@ -10,7 +10,7 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import auc, roc_curve
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support, roc_auc_score, accuracy_score, cohen_kappa_score
 from sklearn.preprocessing import label_binarize
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
@@ -125,20 +125,29 @@ def auroc_wrapper(y_true, y_pred):
         return accuracy_score(y_true, np.argmax(y_pred, axis=1))
 
 
+# def kappa_wrapper(y_true, y_pred):
+#     y_true = np.array(y_true)
+#     y_pred = np.array(y_pred)
+#     if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+#         y_true = y_true.dot(range(y_true.shape[1]))
+#     if len(y_pred.shape) > 1 and y_pred.shape[1] > 1:
+#         y_pred = np.argmax(y_pred, axis=1)
+#     try:
+#         return quadratic_weighted_kappa(y_true, y_pred)
+#     except IndexError:
+#         return np.nan
+
+
 def kappa_wrapper(y_true, y_pred):
-    y_true = np.array(y_true)
-    y_pred = np.array(y_pred)
-    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
-        y_true = y_true.dot(range(y_true.shape[1]))
-    if len(y_pred.shape) > 1 and y_pred.shape[1] > 1:
-        y_pred = np.argmax(y_pred, axis=1)
-    try:
-        return quadratic_weighted_kappa(y_true, y_pred)
-    except IndexError:
-        return np.nan
+    def flatten(y):
+        if len(y.shape) > 1 and y.shape[1] > 1:
+            y = np.argmax(y, axis=1)
+            y = y.reshape(-1)
+        return y
 
-
-kappa = kappa_wrapper
+    y_true = flatten(y_true)
+    y_pred = flatten(y_pred)
+    return cohen_kappa_score(y_true, y_pred)
 
 
 def accuracy_wrapper(y_true, y_pred):
