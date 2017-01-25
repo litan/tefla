@@ -360,7 +360,7 @@ def _load_variables(sess, saver, weights_from):
         try:
             reader = tf.train.NewCheckpointReader(weights_from)
             names_to_restore = set(reader.get_variable_to_shape_map().keys())
-            variables_to_restore = [v for v in tf.all_variables() if v.name[:-2] in names_to_restore]
+            variables_to_restore = [v for v in tf.global_variables() if v.name[:-2] in names_to_restore]
             logger.info("Loading %d variables: " % len(variables_to_restore))
             for var in variables_to_restore:
                 logger.info("Loading: %s %s)" % (var.name, var.get_shape()))
