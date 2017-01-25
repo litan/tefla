@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import tensorflow as tf
+
 from tefla.core.layer_arg_ops import common_layer_args, make_args, end_points
 from tefla.core.layers import dropout, relu
 from tefla.core.layers import input, conv2d, fully_connected, max_pool, softmax
@@ -20,7 +21,7 @@ def model(is_training, reuse):
     x = input((None, crop_size[1], crop_size[0], 3), **common_args)
 
     with tf.variable_scope('vgg_16'):
-        mean_rgb = tf.get_variable(name='mean_rgb', initializer=tf.truncated_normal(shape=[3]))
+        mean_rgb = tf.get_variable(name='mean_rgb', initializer=tf.truncated_normal(shape=[3]), trainable=False)
         x = x - mean_rgb
         with tf.variable_scope('conv1'):
             x = conv2d(x, 64, name='conv1_1', **conv_args)
@@ -60,3 +61,9 @@ def model(is_training, reuse):
         predictions = softmax(x, name='predictions', **common_args)
 
     return end_points(is_training)
+
+# vgg_model = model(False, False)
+# from tefla.utils import util
+#
+# util.show_layer_shapes(vgg_model)
+# util.show_vars()

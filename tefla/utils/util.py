@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import importlib
 import logging
 import os
@@ -16,7 +18,7 @@ from tensorflow.python.framework import tensor_util
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import variables
 
-from quadratic_weighted_kappa import quadratic_weighted_kappa
+from tefla.utils.quadratic_weighted_kappa import quadratic_weighted_kappa
 
 
 def roc(y_true, y_pred, classes=[0, 1, 2, 3, 4]):
@@ -119,7 +121,7 @@ def auroc_wrapper(y_true, y_pred):
     try:
         return roc_auc_score(y_true, y_pred[:, 1])
     except ValueError as e:
-        print e
+        print(e)
         return accuracy_score(y_true, np.argmax(y_pred, axis=1))
 
 
@@ -162,26 +164,35 @@ def dump_vars(sess):
     print("-----------")
 
 
-def show_vars():
+def show_vars(logger=None):
+    printer = logger.info if logger is not None else print
     all_vars = set(tf.global_variables())
     trainable_vars = set(tf.trainable_variables())
     non_trainable_vars = all_vars.difference(trainable_vars)
-
-    print("\n---Trainable vars in model:")
-    name_shapes = map(lambda v: (v.name, v.get_shape()), trainable_vars)
-    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
-        print('%s %s' % (n, s))
-
-    print("\n---Non Trainable vars in model:")
-    name_shapes = map(lambda v: (v.name, v.get_shape()), non_trainable_vars)
-    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
-        print('%s %s' % (n, s))
-
     local_vars = set(tf.local_variables())
-    print("\n---Local vars in model:")
-    name_shapes = map(lambda v: (v.name, v.get_shape()), local_vars)
-    for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
-        print('%s %s' % (n, s))
+
+    class nonlocal: pass
+
+    nonlocal.total_params = 0
+
+    def show_var_info(vars, var_type):
+        printer('\n---%s vars in model:' % var_type)
+        name_shapes = map(lambda v: (v.name, v.get_shape()), vars)
+        for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
+            printer('%s %s' % (n, s))
+            nonlocal.total_params += np.prod(s.as_list())
+
+    show_var_info(trainable_vars, 'Trainable')
+    show_var_info(non_trainable_vars, 'Non Trainable')
+    show_var_info(local_vars, 'Local')
+    printer('Total number of params: %d' % nonlocal.total_params)
+
+
+def show_layer_shapes(end_points, logger=None):
+    printer = logger.info if logger is not None else print
+    printer("\nModel layer output shapes:")
+    for k, v in end_points.iteritems():
+        printer("%s - %s" % (k, v.get_shape()))
 
 
 def init_logging(file_name, file_log_level, console_log_level, clean=False):

@@ -8,8 +8,10 @@ import time
 
 import numpy as np
 import tensorflow as tf
+
 from tefla.core.lr_policy import NoDecayPolicy
 from tefla.da.iterator import BatchIterator
+from tefla.utils import util
 
 logger = logging.getLogger('tefla')
 
@@ -54,19 +56,7 @@ class SupervisedTrainer(object):
         data_set.print_info()
         logger.info('Max epochs: %d' % self.num_epochs)
         if verbose > 0:
-            all_vars = set(tf.global_variables())
-            trainable_vars = set(tf.trainable_variables())
-            non_trainable_vars = all_vars.difference(trainable_vars)
-
-            logger.info("\n---Trainable vars in model:")
-            name_shapes = map(lambda v: (v.name, v.get_shape()), trainable_vars)
-            for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
-                logger.info('%s %s' % (n, s))
-
-            logger.info("\n---Non Trainable vars in model:")
-            name_shapes = map(lambda v: (v.name, v.get_shape()), non_trainable_vars)
-            for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
-                logger.info('%s %s' % (n, s))
+            util.show_vars(logger)
 
         # logger.debug("\n---Number of Regularizable vars in model:")
         # logger.debug(len(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)))
@@ -78,7 +68,7 @@ class SupervisedTrainer(object):
             for n in sorted(names):
                 logger.debug(n)
 
-        _print_layer_shapes(self.training_end_points)
+        util.show_layer_shapes(self.training_end_points, logger)
 
     def _train_loop(self, data_set, weights_from, start_epoch, resume_lr, summary_every,
                     verbose, clean):
@@ -324,7 +314,7 @@ class SupervisedTrainer(object):
                                                          self.validation_end_points[
                                                              'predictions']
         with tf.name_scope('predictions'):
-            self.target = tf.placeholder(tf.int32, shape=(None,))
+            self.target = tf.placeholder(tf.int32, shape=(None,), name='target')
         with tf.name_scope('loss'):
             training_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -345,7 +335,7 @@ class SupervisedTrainer(object):
         self.validation_inputs = self.validation_end_points['inputs']
         self.validation_predictions = self.validation_end_points['predictions']
         with tf.name_scope('predictions'):
-            self.target = tf.placeholder(tf.float32, shape=(None, 1))
+            self.target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
         with tf.name_scope('loss'):
             training_loss = tf.reduce_mean(
                 tf.square(tf.sub(self.training_predictions, self.target)))
@@ -413,12 +403,6 @@ def variable_summaries(var, name, collections, extensive=False):
         tf.summary.scalar('max/' + name, tf.reduce_max(var), collections=collections)
         tf.summary.scalar('min/' + name, tf.reduce_min(var), collections=collections)
     return tf.summary.histogram(name, var, collections=collections)
-
-
-def _print_layer_shapes(end_points):
-    logger.info("\nModel layer output shapes:")
-    for k, v in end_points.iteritems():
-        logger.info("%s - %s" % (k, v.get_shape()))
 
 
 def _clip_grad_norms(self, gradients_to_variables, max_norm=5):
