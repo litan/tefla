@@ -125,20 +125,21 @@ def auroc_wrapper(y_true, y_pred):
         return accuracy_score(y_true, np.argmax(y_pred, axis=1))
 
 
-# def kappa_wrapper(y_true, y_pred):
-#     y_true = np.array(y_true)
-#     y_pred = np.array(y_pred)
-#     if len(y_true.shape) > 1 and y_true.shape[1] > 1:
-#         y_true = y_true.dot(range(y_true.shape[1]))
-#     if len(y_pred.shape) > 1 and y_pred.shape[1] > 1:
-#         y_pred = np.argmax(y_pred, axis=1)
-#     try:
-#         return quadratic_weighted_kappa(y_true, y_pred)
-#     except IndexError:
-#         return np.nan
-
-
 def kappa_wrapper(y_true, y_pred):
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+        y_true = y_true.dot(range(y_true.shape[1]))
+    if len(y_pred.shape) > 1 and y_pred.shape[1] > 1:
+        y_pred = np.argmax(y_pred, axis=1)
+    try:
+        return quadratic_weighted_kappa(y_true, y_pred)
+    except IndexError:
+        return np.nan
+
+
+def _kappa_helper(y_true, y_pred, weights=None):
+    # weights can be None, 'linear', or 'quadratic'
     def flatten(y):
         if len(y.shape) > 1 and y.shape[1] > 1:
             y = np.argmax(y, axis=1)
@@ -147,7 +148,19 @@ def kappa_wrapper(y_true, y_pred):
 
     y_true = flatten(y_true)
     y_pred = flatten(y_pred)
-    return cohen_kappa_score(y_true, y_pred)
+    return cohen_kappa_score(y_true, y_pred, weights=weights)
+
+
+def kappa_noweight_wrapper(y_true, y_pred):
+    return _kappa_helper(y_true, y_pred)
+
+
+def kappa_linear_wrapper(y_true, y_pred):
+    return _kappa_helper(y_true, y_pred, 'linear')
+
+
+def kappa_quadratic_wrapper(y_true, y_pred):
+    return _kappa_helper(y_true, y_pred, 'quadratic')
 
 
 def accuracy_wrapper(y_true, y_pred):
