@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import tensorflow as tf
 from tefla.core.layer_arg_ops import common_layer_args, make_args, end_points
 from tefla.core.layers import dropout, relu
 from tefla.core.layers import input, conv2d, fully_connected, max_pool, softmax
@@ -54,6 +53,7 @@ def model(is_training, reuse):
     return end_points(is_training)
 
 
-model_for_loading = model(False, None)
-from tefla.utils import util
-util.show_vars()
+# model_for_loading = model(False, None)
+# from tefla.utils import util
+#
+# util.show_vars()

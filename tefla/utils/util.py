@@ -72,9 +72,9 @@ def get_predictions(feature_net, images, tf=None, bbox=None, color_vec=None):
     return predictions
 
 
-def kappa_from_proba(w, p, y_true):
-    return kappa(y_true, p.dot(w))
-
+# def kappa_from_proba(w, p, y_true):
+#     return kappa(y_true, p.dot(w))
+#
 
 def load_module(mod):
     return importlib.import_module(mod.replace('/', '.').split('.py')[0])
@@ -208,6 +208,33 @@ def show_vars(logger=None):
     show_var_info(non_trainable_vars, 'Non Trainable')
     show_var_info(local_vars, 'Local')
     printer('Total number of params: %d' % nonlocal.total_params)
+
+
+def load_variables(sess, saver, weights_from, logger=None):
+    printer = logger.info if logger is not None else print
+    printer("---Loading session/weights from %s..." % weights_from)
+    try:
+        saver.restore(sess, weights_from)
+    except Exception as e:
+        printer("Unable to restore entire session from checkpoint. Error: %s." % e.message)
+        printer("Doing selective restore.")
+        try:
+            reader = tf.train.NewCheckpointReader(weights_from)
+            names_to_restore = set(reader.get_variable_to_shape_map().keys())
+            variables_to_restore = [v for v in tf.global_variables() if v.name[:-2] in names_to_restore]
+            printer("Loading %d variables: " % len(variables_to_restore))
+            for var in variables_to_restore:
+                printer("Loading: %s %s)" % (var.name, var.get_shape()))
+                restorer = tf.train.Saver([var])
+                try:
+                    restorer.restore(sess, weights_from)
+                except Exception as e:
+                    printer("Problem loading: %s -- %s" % (var.name, e.message))
+                    continue
+            printer("Loaded session/weights from %s" % weights_from)
+        except Exception:
+            printer("Couldn't load session/weights from %s; starting from scratch" % weights_from)
+            sess.run(tf.initialize_all_variables())
 
 
 def show_layer_shapes(end_points, logger=None):

@@ -7,7 +7,7 @@ from tefla.core.layers import dropout, relu
 from tefla.core.layers import input, conv2d, fully_connected, max_pool, softmax
 
 # sizes - (width, height)
-image_size = (256, 256)
+image_size = (224, 224)
 crop_size = (224, 224)
 
 
@@ -58,8 +58,7 @@ def model(is_training, reuse):
         x = dropout(x, drop_p=0.5, name='dropout7', **common_args)
 
         x = conv2d(x, 1000, name='fc8', filter_size=(1, 1), **logit_args)
-        predictions = softmax(x, name='predictions', **common_args)
-
+    predictions = softmax(x, name='predictions', **common_args)
     return end_points(is_training)
 
 # vgg_model = model(False, False)

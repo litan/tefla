@@ -52,10 +52,7 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     predictions = predictor.predict(images)
     predictions = predictions.reshape(-1, 1000)
 
-    if not os.path.exists(os.path.join(predict_dir, '..', 'results')):
-        os.mkdir(os.path.join(predict_dir, '..', 'results'))
-    if not os.path.exists(os.path.join(predict_dir, '..', 'results', dataset_name)):
-        os.mkdir(os.path.join(predict_dir, '..', 'results', dataset_name))
+    # print(predictions)
 
     names = data.get_names(images)
     for i, name in enumerate(names):

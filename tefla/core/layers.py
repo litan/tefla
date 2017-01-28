@@ -4,24 +4,25 @@ from collections import namedtuple
 
 import numpy as np
 import tensorflow as tf
-from tefla.core import initializers as initz
-from tefla.utils import util as helper
 from tensorflow.python.ops import math_ops
 from tensorflow.python.training import moving_averages
+
+from tefla.core import initializers as initz
+from tefla.utils import util as helper
 
 NamedOutputs = namedtuple('NamedOutputs', ['name', 'outputs'])
 
 
-def input(shape, name='inputs', outputs_collections=None, **unused):
+def input(shape, outputs_collections=None, name='inputs', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         inputs = tf.placeholder(tf.float32, shape=shape, name="input")
-    return _collect_named_outputs(outputs_collections, name, inputs)
+        return _collect_named_outputs(outputs_collections, curr_scope, inputs)
 
 
-def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=initz.he_normal(), b_init=0.0,
-                    w_regularizer=tf.nn.l2_loss, name='fc', batch_norm=None, batch_norm_args=None, activation=None,
-                    outputs_collections=None, use_bias=True):
+def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm=None, batch_norm_args=None,
+                    w_init=initz.he_normal(), use_bias=True, b_init=0.0, w_regularizer=tf.nn.l2_loss,
+                    outputs_collections=None, trainable=True, name='fc'):
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) > 1, "Input Tensor shape must be > 1-D"
     if len(x.get_shape()) != 2:
@@ -29,7 +30,7 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
 
     n_input = helper.get_input_shape(x)[1]
 
-    with tf.variable_scope(name, reuse=reuse):
+    with tf.variable_scope(name, reuse=reuse) as curr_scope:
         shape = [n_input, n_output] if hasattr(w_init, '__call__') else None
         W = tf.get_variable(
             name='weights',
@@ -57,18 +58,18 @@ def fully_connected(x, n_output, is_training, reuse, trainable=True, w_init=init
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
         if activation:
-            output = activation(output, reuse=reuse, trainable=trainable)
+            output = activation(output, is_training=is_training, reuse=reuse, trainable=trainable)
 
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
-def conv2d(x, n_output_channels, is_training, reuse, trainable=True, filter_size=(3, 3), stride=(1, 1),
-           padding='SAME', w_init=initz.he_normal(), b_init=0.0, w_regularizer=tf.nn.l2_loss, untie_biases=False,
-           name='conv2d', batch_norm=None, batch_norm_args=None, activation=None, use_bias=True,
-           outputs_collections=None):
+def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=(1, 1),
+           padding='SAME', activation=None, batch_norm=None, batch_norm_args=None, w_init=initz.he_normal(),
+           use_bias=True, untie_biases=False, b_init=0.0, w_regularizer=tf.nn.l2_loss,
+           outputs_collections=None, trainable=True, name='conv2d'):
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 4, "Input Tensor shape must be 4-D"
-    with tf.variable_scope(name, reuse=reuse):
+    with tf.variable_scope(name, reuse=reuse) as curr_scope:
         shape = [filter_size[0], filter_size[1], x.get_shape()[-1], n_output_channels] if hasattr(w_init,
                                                                                                   '__call__') else None
         W = tf.get_variable(
@@ -110,31 +111,32 @@ def conv2d(x, n_output_channels, is_training, reuse, trainable=True, filter_size
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
         if activation:
-            output = activation(output, reuse=reuse, trainable=trainable)
+            output = activation(output, is_training=is_training, reuse=reuse, trainable=trainable)
 
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
-def max_pool(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', name='pool', outputs_collections=None, **unused):
+def max_pool(x, filter_size=(3, 3), stride=(2, 2), padding='VALID', outputs_collections=None, name='max_pool',
+             **unused):
     _check_unused(unused, name)
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 4, "Input Tensor shape must be 4-D"
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.max_pool(
             value=x,
             ksize=[1, filter_size[0], filter_size[1], 1],
             strides=[1, stride[0], stride[1], 1],
             padding=padding,
         )
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def rms_pool_2d(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', name='pool', epsilon=0.000000000001,
-                outputs_collections=None, **unused):
+def rms_pool_2d(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', epsilon=0.000000000001,
+                outputs_collections=None, name='rms_pool', **unused):
     _check_unused(unused, name)
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 4, "Input Tensor shape must be 4-D"
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.avg_pool(
             value=tf.square(x),
             ksize=[1, filter_size[0], filter_size[1], 1],
@@ -142,52 +144,53 @@ def rms_pool_2d(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', name='pool
             padding=padding,
         )
         output = tf.sqrt(output + epsilon)
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def avg_pool_2d(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', name=None, outputs_collections=None, **unused):
+def avg_pool_2d(x, filter_size=(3, 3), stride=(2, 2), padding='SAME', outputs_collections=None, name='avg_pool',
+                **unused):
     _check_unused(unused, name)
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 4, "Input Tensor shape must be 4-D"
-    with tf.name_scope(name or "pool"):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.avg_pool(
             value=x,
             ksize=[1, filter_size[0], filter_size[1], 1],
             strides=[1, stride[0], stride[1], 1],
             padding=padding,
-            name="avg_pool")
-        return _collect_named_outputs(outputs_collections, name, output)
+        )
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def global_avg_pool(x, name="global_avg_pool", outputs_collections=None, **unused):
+def global_avg_pool(x, outputs_collections=None, name="global_avg_pool", **unused):
     _check_unused(unused, name)
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 4, "Input Tensor shape must be 4-D"
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.reduce_mean(x, [1, 2])
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def feature_max_pool_1d(x, stride=2, name='pool', outputs_collections=None, **unused):
+def feature_max_pool_1d(x, stride=2, outputs_collections=None, name='feature_max_pool', **unused):
     _check_unused(unused, name)
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) == 2, "Input Tensor shape must be 2-D"
-    x = tf.reshape(x, (-1, input_shape[1] // stride, stride))
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
+        x = tf.reshape(x, (-1, input_shape[1] // stride, stride))
         output = tf.reduce_max(
             input_tensor=x,
             reduction_indices=[2],
         )
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def batch_norm_tf(x, name='bn', scale=False, updates_collections=None, **kwargs):
+def batch_norm_tf(x, scale=False, updates_collections=None, name='BatchNorm', **kwargs):
     return tf.contrib.layers.batch_norm(x, scope=name, scale=scale, updates_collections=updates_collections, **kwargs)
 
 
-def batch_norm_lasagne(x, is_training, reuse, trainable=True, decay=0.9, epsilon=1e-4, name='bn',
-                       updates_collections=tf.GraphKeys.UPDATE_OPS, outputs_collections=None):
-    with tf.variable_scope(name, reuse=reuse):
+def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=tf.GraphKeys.UPDATE_OPS,
+                       outputs_collections=None, trainable=True, name='bn'):
+    with tf.variable_scope(name, reuse=reuse) as curr_scope:
         beta = tf.get_variable(
             name='beta',
             initializer=tf.constant(0.0, shape=[x.get_shape()[-1]]),
@@ -247,11 +250,12 @@ def batch_norm_lasagne(x, is_training, reuse, trainable=True, decay=0.9, epsilon
                                   if offset is not None else -mean * inv)
 
         output = _batch_normalization(x, mean, inv_std, beta, gamma)
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
-def prelu(x, reuse, trainable=True, name='prelu', outputs_collections=None):
-    with tf.variable_scope(name, reuse=reuse):
+def prelu(x, reuse, outputs_collections=None, trainable=True, name='prelu', **unused):
+    _check_unused(unused, name)
+    with tf.variable_scope(name, reuse=reuse) as curr_scope:
         alphas = tf.get_variable(
             name='alpha',
             initializer=tf.constant(0.2, shape=[x.get_shape()[-1]]),
@@ -259,69 +263,52 @@ def prelu(x, reuse, trainable=True, name='prelu', outputs_collections=None):
         )
 
         output = tf.nn.relu(x) + tf.mul(alphas, (x - tf.abs(x))) * 0.5
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
-def relu(x, name='relu', outputs_collections=None, **unused):
+def relu(x, outputs_collections=None, name='relu', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.relu(x)
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def leaky_relu(x, alpha=0.01, name='leaky_relu', outputs_collections=None, **unused):
+def leaky_relu(x, alpha=0.01, outputs_collections=None, name='leaky_relu', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.relu(x) + tf.mul(alpha, (x - tf.abs(x))) * 0.5
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def softmax(x, name='softmax', outputs_collections=None, **unused):
+def softmax(x, outputs_collections=None, name='softmax', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         output = tf.nn.softmax(x)
-        return _collect_named_outputs(outputs_collections, name, output)
+        return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
-def dropout(x, is_training, drop_p=0.5, name='dropout', outputs_collections=None, **unused):
+def dropout(x, is_training, drop_p=0.5, outputs_collections=None, name='dropout', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name):
+    with tf.name_scope(name) as curr_scope:
         keep_p = 1. - drop_p
         if is_training:
             output = tf.nn.dropout(x, keep_p, seed=None)
-            return _collect_named_outputs(outputs_collections, name, output)
+            return _collect_named_outputs(outputs_collections, curr_scope, output)
         else:
-            return _collect_named_outputs(outputs_collections, name, x)
+            return _collect_named_outputs(outputs_collections, curr_scope, x)
 
 
-def _flatten(x, name='flatten'):
+def _flatten(x):
     input_shape = helper.get_input_shape(x)
     assert len(input_shape) > 1, "Input Tensor shape must be > 1-D"
-    with tf.name_scope(name):
-        dims = int(np.prod(input_shape[1:]))
-        flattened = tf.reshape(x, [-1, dims])
-        return flattened
-
-
-def repeat(inputs, repetitions, layer, name='repeat', outputs_collections=None, *args, **kwargs):
-    with tf.variable_scope(name, 'Repeat', [inputs]):
-        inputs = tf.convert_to_tensor(inputs)
-        if name is None:
-            if hasattr(layer, '__name__'):
-                name = layer.__name__
-            elif hasattr(layer, 'func') and hasattr(layer.func, '__name__'):
-                name = layer.func.__name__  # In case layer is a functools.partial.
-            else:
-                name = 'repeat'
-        outputs = inputs
-        for i in range(repetitions):
-            new_name = name + '_' + str(i + 1)
-            outputs = layer(outputs, name=new_name, *args, **kwargs)
-            tf.add_to_collection(outputs_collections, NamedOutputs(new_name, outputs))
-        return outputs
+    dims = int(np.prod(input_shape[1:]))
+    flattened = tf.reshape(x, [-1, dims])
+    return flattened
 
 
 def _collect_named_outputs(outputs_collections, name, output):
+    if name[-1] == '/':
+        name = name[:-1]
     if outputs_collections is not None:
         tf.add_to_collection(outputs_collections, NamedOutputs(name, output))
     return output

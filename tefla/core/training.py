@@ -93,7 +93,7 @@ class SupervisedTrainer(object):
             batch_iters_per_epoch = int(round(len(data_set.training_X) / self.training_iterator.batch_size))
             learning_rate_value = self.lr_policy.initial_lr
             if weights_from:
-                _load_variables(sess, saver, weights_from)
+                util.load_variables(sess, saver, weights_from, logger)
                 learning_rate_value = self.lr_policy.resume_lr(start_epoch, batch_iters_per_epoch, resume_lr)
 
             logger.info("Initial learning rate: %f " % learning_rate_value)
@@ -309,10 +309,11 @@ class SupervisedTrainer(object):
         training_logits, self.training_predictions = self.training_end_points['logits'], self.training_end_points[
             'predictions']
         self.validation_end_points = self.model(is_training=False, reuse=True)
-        self.validation_inputs = self.validation_end_points['inputs']
-        validation_logits, self.validation_predictions = self.validation_end_points['logits'], \
+        # beware - we're depending on _1 suffixes based on name scopes here
+        self.validation_inputs = self.validation_end_points['inputs_1']
+        validation_logits, self.validation_predictions = self.validation_end_points['logits_1'], \
                                                          self.validation_end_points[
-                                                             'predictions']
+                                                             'predictions_1']
         with tf.name_scope('predictions'):
             self.target = tf.placeholder(tf.int32, shape=(None,), name='target')
         with tf.name_scope('loss'):
@@ -348,32 +349,6 @@ class SupervisedTrainer(object):
 
     def _adjust_ground_truth(self, y):
         return y if self.classification else y.reshape(-1, 1).astype(np.float32)
-
-
-def _load_variables(sess, saver, weights_from):
-    logger.info("---Loading session/weights from %s..." % weights_from)
-    try:
-        saver.restore(sess, weights_from)
-    except Exception as e:
-        logger.info("Unable to restore entire session from checkpoint. Error: %s." % e.message)
-        logger.info("Doing selective restore.")
-        try:
-            reader = tf.train.NewCheckpointReader(weights_from)
-            names_to_restore = set(reader.get_variable_to_shape_map().keys())
-            variables_to_restore = [v for v in tf.global_variables() if v.name[:-2] in names_to_restore]
-            logger.info("Loading %d variables: " % len(variables_to_restore))
-            for var in variables_to_restore:
-                logger.info("Loading: %s %s)" % (var.name, var.get_shape()))
-                restorer = tf.train.Saver([var])
-                try:
-                    restorer.restore(sess, weights_from)
-                except Exception as e:
-                    logger.info("Problem loading: %s -- %s" % (var.name, e.message))
-                    continue
-            logger.info("Loaded session/weights from %s" % weights_from)
-        except Exception:
-            logger.info("Couldn't load session/weights from %s; starting from scratch" % weights_from)
-            sess.run(tf.initialize_all_variables())
 
 
 def _create_summary_writer(summary_dir, sess, clean):
