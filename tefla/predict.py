@@ -12,7 +12,7 @@ from tefla.utils import util
 
 @click.command()
 @click.option('--model', help='Relative path to model.')
-@click.option('--features_layer', default='predictions', help='Layer from which to extract features.')
+@click.option('--output_layer', default='predictions', help='Layer from which to extract features.')
 @click.option('--training_cnf', help='Relative path to training config file.')
 @click.option('--predict_dir', help='Directory with test Images')
 @click.option('--weights_from', help='Path to initial weights file.')
@@ -25,7 +25,7 @@ from tefla.utils import util
               help='Do all processing on the calling thread.')
 @click.option('--predict_type', default='quasi', show_default=True,
               help='Specify predict type: quasi, 1_crop or 10_crop')
-def predict(model, features_layer, training_cnf, predict_dir, weights_from, tag, convert, image_size, sync,
+def predict(model, output_layer, training_cnf, predict_dir, weights_from, tag, convert, image_size, sync,
             predict_type):
     model_def = util.load_module(model)
     model = model_def.model
@@ -39,12 +39,12 @@ def predict(model, features_layer, training_cnf, predict_dir, weights_from, tag,
     prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)
 
     if predict_type == 'quasi':
-        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20, features_layer)
+        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20, output_layer)
     elif predict_type == '1_crop':
-        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, features_layer)
+        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, output_layer)
     elif predict_type == '10_crop':
         predictor = TenCropPredictor(model, cnf, weights_from, prediction_iterator, model_def.crop_size[0],
-                                     model_def.image_size[0], features_layer)
+                                     model_def.image_size[0], output_layer)
     else:
         raise ValueError('Unknown predict_type: %s' % predict_type)
     predictions = predictor.predict(images)
@@ -53,7 +53,7 @@ def predict(model, features_layer, training_cnf, predict_dir, weights_from, tag,
     if not os.path.exists(prediction_results_dir):
         os.makedirs(prediction_results_dir)
 
-    if features_layer == 'predictions':
+    if output_layer == 'predictions':
         names = data.get_names(images)
         image_prediction_probs = np.column_stack([names, predictions])
         headers = ['score%d' % (i + 1) for i in range(predictions.shape[1])]
@@ -75,7 +75,7 @@ def predict(model, features_layer, training_cnf, predict_dir, weights_from, tag,
         # feature extraction
         features_file = os.path.join(prediction_results_dir, 'features.npy')
         np.save(features_file, predictions)
-        print('Features from layer: %s saved to: %s' % (features_layer, features_file))
+        print('Features from layer: %s saved to: %s' % (output_layer, features_file))
 
 
 if __name__ == '__main__':
