@@ -1,10 +1,11 @@
+# Ported from https://github.com/tensorflow/tensorflow/tree/r0.12/tensorflow/contrib/slim/python/slim/nets
 from __future__ import division, print_function
 
 import tensorflow as tf
 from tensorflow.contrib.layers import utils
 
 from tefla.core.layer_arg_ops import make_args, end_points, common_layer_args
-from tefla.core.layers import conv2d, max_pool, softmax, batch_norm_tf, input
+from tefla.core.layers import conv2d, max_pool, softmax, batch_norm_tf, input, fully_connected
 from tefla.core.layers import relu, _collect_named_outputs
 
 # sizes - (width, height)
@@ -25,10 +26,10 @@ def subsample(inputs, factor, scope=None, **common_args):
         return max_pool(inputs, filter_size=(1, 1), stride=(factor, factor), padding='SAME', name=scope)
 
 
-def conv2d_same(inputs, num_outputs, kernel_size, stride, rate=1, scope=None, **common_args):
+def conv2d_same(inputs, num_outputs, kernel_size, stride, rate=1, scope=None, **conv_args):
     if stride == 1:
         return conv2d(inputs, num_outputs, filter_size=(kernel_size, kernel_size), stride=(stride, stride),
-                      dilation_rate=rate, padding='SAME', name=scope, **common_args)
+                      dilation_rate=rate, padding='SAME', name=scope, **conv_args)
     else:
         kernel_size_effective = kernel_size + (kernel_size - 1) * (rate - 1)
         pad_total = kernel_size_effective - 1
@@ -37,15 +38,18 @@ def conv2d_same(inputs, num_outputs, kernel_size, stride, rate=1, scope=None, **
         inputs = tf.pad(inputs,
                         [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
         return conv2d(inputs, num_outputs, filter_size=(kernel_size, kernel_size), stride=(stride, stride),
-                      dilation_rate=rate, padding='VALID', name=scope, **common_args)
+                      dilation_rate=rate, padding='VALID', name=scope, **conv_args)
+
+
+def make_conv_args(activation, **common_args):
+    return make_args(use_bias=False, batch_norm=batch_norm_tf, batch_norm_args=batch_norm_params,
+                     activation=activation, **common_args)
 
 
 def bottleneck(inputs, depth, depth_bottleneck, stride, rate=1,
                scope=None, **common_args):
-    conv_args_common = make_args(use_bias=False, batch_norm=batch_norm_tf, batch_norm_args=batch_norm_params,
-                                 **common_args)
-    conv_args_relu = make_args(activation=relu, **conv_args_common)
-    conv_args_none = make_args(activation=None, **conv_args_common)
+    conv_args_none = make_conv_args(activation=None, **common_args)
+    conv_args_relu = make_conv_args(activation=relu, **common_args)
     with tf.variable_scope(scope, 'bottleneck_v1', [inputs]) as sc:
         depth_in = utils.last_dimension(inputs.get_shape(), min_rank=4)
         if depth == depth_in:
@@ -70,11 +74,14 @@ def bottleneck(inputs, depth, depth_bottleneck, stride, rate=1,
 
 
 def model(is_training, reuse):
-    common_args = common_layer_args(is_training, reuse)
-    conv_args = make_args(use_bias=False, activation=relu, batch_norm=batch_norm_tf, batch_norm_args=batch_norm_params,
-                          **common_args)
+    common_trainable_args = common_layer_args(is_training, reuse, trainable=True)
+    common_frozen_args = common_layer_args(is_training, reuse, trainable=False)
+    conv_args = make_conv_args(activation=relu, **common_frozen_args)
+    logit_args = make_args(activation=None, **common_trainable_args)
+
+    common_args = common_frozen_args
     net = input((None, crop_size[1], crop_size[0], 3), **common_args)
-    with tf.variable_scope('resnet_v1_50'):
+    with tf.variable_scope('resnet_v1_50', reuse=reuse):
         mean_rgb = tf.get_variable(name='mean_rgb', initializer=tf.truncated_normal(shape=[3]), trainable=False)
         net = net - mean_rgb
         net = conv2d_same(net, 64, 7, stride=2, scope='conv1', **conv_args)
@@ -115,6 +122,7 @@ def model(is_training, reuse):
                 net = bottleneck(net, 1024, 256, 2, **common_args)
             net = _collect_named_outputs(common_args['outputs_collections'], sc.name, net)
 
+        common_args = common_trainable_args
         with tf.variable_scope('block4') as sc:
             with tf.variable_scope('unit_1'):
                 net = bottleneck(net, 2048, 512, 1, **common_args)
@@ -125,6 +133,6 @@ def model(is_training, reuse):
             net = _collect_named_outputs(common_args['outputs_collections'], sc.name, net)
 
         net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
-        net = conv2d(net, 1000, filter_size=(1, 1), activation=None, name='logits', **common_args)
-    predictions = softmax(net, name='predictions', **common_args)
+    logits = fully_connected(net, 2, name='logits', **logit_args)
+    predictions = softmax(logits, name='predictions', **common_args)
     return end_points(common_args['is_training'])

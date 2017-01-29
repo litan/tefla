@@ -54,10 +54,10 @@ def model(is_training, reuse):
         x = conv2d(x, 4096, name='fc6', filter_size=(7, 7), padding='VALID', **conv_frozen_args)
         x = dropout(x, drop_p=0.5, name='dropout6', **common_args)
 
-        x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_args)
+        x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_frozen_args)
         x = dropout(x, drop_p=0.5, name='dropout7', **common_args)
 
-        logits = fully_connected(x, 2, name='logits', **logit_args)
-        predictions = softmax(logits, name='predictions', **common_args)
+    logits = fully_connected(x, 2, name='logits', **logit_args)
+    predictions = softmax(logits, name='predictions', **common_args)
 
     return end_points(is_training)
