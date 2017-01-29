@@ -63,7 +63,7 @@ def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm
         return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
-def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=(1, 1),
+def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=(1, 1), dilation_rate=1,
            padding='SAME', activation=None, batch_norm=None, batch_norm_args=None, w_init=initz.he_normal(),
            use_bias=True, untie_biases=False, b_init=0.0, w_regularizer=tf.nn.l2_loss,
            outputs_collections=None, trainable=True, name='conv2d'):
@@ -80,11 +80,21 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
             trainable=trainable
         )
 
-        output = tf.nn.conv2d(
-            input=x,
-            filter=W,
-            strides=[1, stride[0], stride[1], 1],
-            padding=padding)
+        if dilation_rate == 1:
+            output = tf.nn.conv2d(
+                input=x,
+                filter=W,
+                strides=[1, stride[0], stride[1], 1],
+                padding=padding)
+        else:
+            if len([_ for s in stride if s > 1]) > 0:
+                raise ValueError("Stride (%s) cannot be more than 1 if rate (%d) is not 1" % (stride, dilation_rate))
+
+            output = tf.nn.atrous_conv2d(
+                value=x,
+                filters=W,
+                rate=dilation_rate,
+                padding=padding)
 
         if use_bias:
             if untie_biases:

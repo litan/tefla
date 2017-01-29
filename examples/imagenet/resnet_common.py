@@ -30,12 +30,9 @@ batch_norm_params = {
 
 
 def conv2d_same(inputs, num_outputs, kernel_size, stride, rate=1, scope=None, **common_args):
-    assert rate == 1 # Todo - deal with dilated convolutions later
-    # return conv2d(inputs, num_outputs, filter_size=(kernel_size, kernel_size), stride=(stride, stride),
-    #               padding='SAME', name=scope, **common_args)
     if stride == 1:
         return conv2d(inputs, num_outputs, filter_size=(kernel_size, kernel_size), stride=(stride, stride),
-                      padding='SAME', name=scope, **common_args)
+                      dilation_rate=rate, padding='SAME', name=scope, **common_args)
     else:
         kernel_size_effective = kernel_size + (kernel_size - 1) * (rate - 1)
         pad_total = kernel_size_effective - 1
@@ -44,7 +41,7 @@ def conv2d_same(inputs, num_outputs, kernel_size, stride, rate=1, scope=None, **
         inputs = tf.pad(inputs,
                         [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
         return conv2d(inputs, num_outputs, filter_size=(kernel_size, kernel_size), stride=(stride, stride),
-                      padding='VALID', name=scope, **common_args)
+                      dilation_rate=rate, padding='VALID', name=scope, **common_args)
 
 
 def bottleneck(inputs, depth, depth_bottleneck, stride, rate=1,
@@ -145,4 +142,3 @@ def resnet_v1(inputs,
                          name='logits', **common_args)
             predictions = softmax(net, name='predictions', **common_args)
         return end_points(common_args['is_training'])
-
