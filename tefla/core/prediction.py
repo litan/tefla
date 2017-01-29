@@ -32,8 +32,9 @@ class PredictSessionMixin(object):
 
 
 class OneCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, output_layer='predictions'):
         self.model = model
+        self.output_layer = output_layer
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
         super(OneCropPredictor, self).__init__(weights_from)
@@ -41,7 +42,7 @@ class OneCropPredictor(PredictSessionMixin):
     def _build_model(self):
         end_points_predict = self.model(is_training=False, reuse=None)
         self.inputs = end_points_predict['inputs']
-        self.predictions = end_points_predict['predictions']
+        self.predictions = end_points_predict[self.output_layer]
 
     def _real_predict(self, X, sess, xform=None, crop_bbox=None):
         tic = time.time()
@@ -56,11 +57,11 @@ class OneCropPredictor(PredictSessionMixin):
 
 
 class QuasiCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_transforms):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, number_of_transforms, output_layer='predictions'):
         self.number_of_transforms = number_of_transforms
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, output_layer)
         super(QuasiCropPredictor, self).__init__(weights_from)
 
     def _build_model(self):
@@ -69,7 +70,7 @@ class QuasiCropPredictor(PredictSessionMixin):
     def _real_predict(self, X, sess):
         standardizer = self.prediction_iterator.standardizer
         da_params = standardizer.da_processing_params()
-        util.veryify_args(da_params, ['sigma'], 'QuasiPredictor > standardizer does unknown da with param(s):')
+        util.veryify_args(da_params, ['sigma'], 'QuasiPredictor.standardizer does unknown da with param(s):')
         color_sigma = da_params.get('sigma', 0.0)
         tfs, color_vecs = tta.build_quasirandom_transforms(self.number_of_transforms, color_sigma=color_sigma,
                                                            **self.cnf['aug_params'])
@@ -83,12 +84,12 @@ class QuasiCropPredictor(PredictSessionMixin):
 
 
 class TenCropPredictor(PredictSessionMixin):
-    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size):
+    def __init__(self, model, cnf, weights_from, prediction_iterator, im_size, crop_size, output_layer='predictions'):
         self.crop_size = crop_size
         self.im_size = im_size
         self.cnf = cnf
         self.prediction_iterator = prediction_iterator
-        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator)
+        self.predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, output_layer)
         super(TenCropPredictor, self).__init__(weights_from)
 
     def _build_model(self):
