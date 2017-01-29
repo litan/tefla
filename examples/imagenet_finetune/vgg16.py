@@ -57,7 +57,7 @@ def model(is_training, reuse):
         x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_frozen_args)
         x = dropout(x, drop_p=0.5, name='dropout7', **common_args)
 
-    logits = fully_connected(x, 2, name='logits', **logit_args)
+        logits = fully_connected(x, 2, name='logits', **logit_args)
     predictions = softmax(logits, name='predictions', **common_args)
 
     return end_points(is_training)

@@ -10,7 +10,7 @@ cnf = {
     'classification': True,
     'iterator_type': 'queued',  # parallel or queued
     'batch_size_train': 32,
-    'batch_size_test': 64,
+    'batch_size_test': 32,
     'aug_params': {
         'zoom_range': (1 / 1.05, 1.05),
         'rotation_range': (-5, 5),

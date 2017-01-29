@@ -93,3 +93,4 @@ weights*/
 *.*~
 amodels/
 examples/**/*data
+*play.py
