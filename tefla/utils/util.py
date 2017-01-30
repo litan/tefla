@@ -389,7 +389,8 @@ def veryify_args(actual, allowed_keys, msg_prefix):
         raise ValueError("%s %s" % (msg_prefix, extra))
 
 
-def check_required_program_args(args, msg):
+def check_required_program_args(args):
+    msg = '\nIncorrect program args. Please run with the --help option to get information on correct usage.'
     if len([a for a in args if a is None]) > 0:
         print(msg)
         sys.exit(1)
