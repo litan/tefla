@@ -8,8 +8,8 @@ import tensorflow as tf
 
 tf.set_random_seed(127)
 
-from tefla.core.dir_dataset import DataSet
-from tefla.core.iter_ops import create_training_iters
+from tefla.core.features_dataset import DataSet
+from tefla.da.iterator import BatchIterator
 from tefla.core.training import SupervisedTrainer
 from tefla.utils import util
 import logging
@@ -34,8 +34,8 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
         weights_from = str(weights_from)
 
     data_set = DataSet(data_dir, model_def.image_size[0])
-    training_iter, validation_iter = create_training_iters(cnf, data_set, model_def.crop_size, start_epoch,
-                                                           cnf.get('iterator_type', 'queued') == 'parallel')
+    training_iter = BatchIterator(cnf['batch_size_train'], True)
+    validation_iter = BatchIterator(cnf['batch_size_test'], True)
     trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
     trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
                 summary_every=cnf.get('summary_every', 10), clean=clean)

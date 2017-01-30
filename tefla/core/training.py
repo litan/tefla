@@ -240,6 +240,9 @@ class SupervisedTrainer(object):
             validation_writer.close()
 
     def _setup_summaries(self):
+        def image_batch_like(shape):
+            return len(shape) == 4 and shape[3] in {1, 3, 4}
+
         with tf.name_scope('summaries'):
             self.epoch_loss = tf.placeholder(tf.float32, shape=[], name="epoch_loss")
 
@@ -247,7 +250,7 @@ class SupervisedTrainer(object):
             tf.summary.scalar('learning rate', self.learning_rate, collections=[TRAINING_EPOCH_SUMMARIES])
             tf.summary.scalar('training (cross entropy) loss', self.epoch_loss,
                               collections=[TRAINING_EPOCH_SUMMARIES])
-            if len(self.inputs.get_shape()) == 4:
+            if image_batch_like(self.inputs.get_shape()):
                 tf.summary.image('input', self.inputs, 10, collections=[TRAINING_BATCH_SUMMARIES])
             for key, val in self.training_end_points.iteritems():
                 variable_summaries(val, key, collections=[TRAINING_BATCH_SUMMARIES])

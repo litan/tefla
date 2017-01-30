@@ -7,11 +7,13 @@ from tefla import convert
 from tefla.core.layer_arg_ops import make_args
 from tefla.da import data
 from tefla.da import iterator
+from tefla.da.standardizer import NoOpStandardizer
 
 logger = logging.getLogger('tefla')
 
 
-def create_training_iters(cnf, data_set, standardizer, crop_size, epoch, parallel):
+def create_training_iters(cnf, data_set, crop_size, epoch, parallel):
+    standardizer = cnf.get('standardizer', NoOpStandardizer())
     balancing = 'balance_ratio' in cnf
     if parallel:
         if balancing:
@@ -70,7 +72,8 @@ def convert_preprocessor(im_size):
     return functools.partial(convert.convert, crop_size=im_size)
 
 
-def create_prediction_iter(cnf, standardizer, crop_size, preprocessor=None, sync=False):
+def create_prediction_iter(cnf, crop_size, preprocessor=None, sync=False):
+    standardizer = cnf.get('standardizer', NoOpStandardizer())
     if sync:
         prediction_iterator_maker = iterator.DAIterator
     else:

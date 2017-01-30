@@ -21,7 +21,7 @@ class PredictSessionMixin(object):
             saver = tf.train.Saver()
             with tf.Session() as sess:
                 print('Loading weights from: %s' % self.weights_from)
-                saver.restore(sess, self.weights_from)
+                util.load_variables(sess, saver, self.weights_from)
                 return self._real_predict(X, sess)
 
     def _real_predict(self, X, sess):
