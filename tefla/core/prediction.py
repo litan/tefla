@@ -7,6 +7,7 @@ import tensorflow as tf
 from scipy.stats.mstats import gmean
 
 from tefla.da import tta
+from tefla.da.iterator import BatchIterator
 from tefla.utils import util
 
 
@@ -49,6 +50,31 @@ class OneCropPredictor(PredictSessionMixin):
         print('Making %d predictions' % len(X))
         data_predictions = []
         for X, y in self.prediction_iterator(X, xform=xform, crop_bbox=crop_bbox):
+            predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
+            data_predictions.append(predictions_e)
+        data_predictions = np.vstack(data_predictions)
+        print('took %6.1f seconds' % (time.time() - tic))
+        return data_predictions
+
+
+class InputFeaturesPredictor(PredictSessionMixin):
+    def __init__(self, model, cnf, weights_from, output_layer='predictions'):
+        self.model = model
+        self.output_layer = output_layer
+        self.cnf = cnf
+        self.prediction_iterator = BatchIterator(cnf['batch_size_test'], False)
+        super(InputFeaturesPredictor, self).__init__(weights_from)
+
+    def _build_model(self):
+        end_points_predict = self.model(is_training=False, reuse=None)
+        self.inputs = end_points_predict['inputs']
+        self.predictions = end_points_predict[self.output_layer]
+
+    def _real_predict(self, X, sess):
+        tic = time.time()
+        print('Making %d predictions' % len(X))
+        data_predictions = []
+        for X, y in self.prediction_iterator(X):
             predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
             data_predictions.append(predictions_e)
         data_predictions = np.vstack(data_predictions)

@@ -1,3 +1,7 @@
+"""
+This is a script for doing training based on input features as opposed to input images.
+The input features are meant to be bottleneck features extracted from a well known net.
+"""
 from __future__ import division, print_function, absolute_import
 
 import click
