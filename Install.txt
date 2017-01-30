@@ -20,7 +20,6 @@
     sudo apt-get install python-pip
     $pip install --upgrade pip
     $pip install --upgrade setuptools
-    $pip install virtualenv
     $pip install --upgrade virtualenv
 
 4. cd to your virtual environment directory & create a virtual environment
