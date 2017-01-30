@@ -22,7 +22,8 @@ validation_labels = mnist[1].labels
 test_images = mnist[2].images.reshape(-1, height, width)
 test_labels = mnist[2].labels
 
-base_dir = '/media/lalit/data/mnist/images/'
+os.makedirs(os.path.join(os.getcwd(), "data", "images"))
+base_dir = os.getcwd() + "/data/images/"
 
 if os.path.exists(base_dir):
     shutil.rmtree(base_dir)

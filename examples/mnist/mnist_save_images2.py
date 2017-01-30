@@ -26,7 +26,8 @@ test_labels = mnist[2].labels
 train_images = np.vstack((train_images, validation_images))
 train_labels = np.concatenate((train_labels, validation_labels))
 
-base_dir = '/media/lalit/data/mnist/images/'
+os.makedirs(os.path.join(os.getcwd(), "data", "images"))
+base_dir = os.getcwd() + "/data/images/"
 
 if os.path.exists(base_dir):
     shutil.rmtree(base_dir)
