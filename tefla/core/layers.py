@@ -87,7 +87,7 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
                 strides=[1, stride[0], stride[1], 1],
                 padding=padding)
         else:
-            if len([_ for s in stride if s > 1]) > 0:
+            if len([s for s in stride if s > 1]) > 0:
                 raise ValueError("Stride (%s) cannot be more than 1 if rate (%d) is not 1" % (stride, dilation_rate))
 
             output = tf.nn.atrous_conv2d(

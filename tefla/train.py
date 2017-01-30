@@ -25,6 +25,8 @@ import logging
 @click.option('--weights_from', help='Path to initial weights file.')
 @click.option('--clean', is_flag=True, help='Clean out training log and summary dir.')
 def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean):
+    util.check_required_program_args([model, training_cnf, data_dir],
+                                     '\nIncorrect program args. Please run with the --help option to know more.')
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf

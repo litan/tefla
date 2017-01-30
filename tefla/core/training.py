@@ -336,8 +336,8 @@ class SupervisedTrainer(object):
         self.inputs = self.training_end_points['inputs']
         self.training_predictions = self.training_end_points['predictions']
         self.validation_end_points = self.model(is_training=False, reuse=True)
-        self.validation_inputs = self.validation_end_points['inputs']
-        self.validation_predictions = self.validation_end_points['predictions']
+        self.validation_inputs = self.validation_end_points['inputs_1']
+        self.validation_predictions = self.validation_end_points['predictions_1']
         with tf.name_scope('predictions'):
             self.target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
         with tf.name_scope('loss'):

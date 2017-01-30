@@ -26,6 +26,8 @@ from tefla.utils import util
               help='Specify predict type: quasi, 1_crop or 10_crop')
 def predict(model, output_layer, training_cnf, predict_dir, weights_from, tag, convert, image_size, sync,
             predict_type):
+    util.check_required_program_args([model, training_cnf, predict_dir, weights_from],
+                                     '\nIncorrect program args. Please run with the --help option to know more.')
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf

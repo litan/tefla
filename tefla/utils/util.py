@@ -4,6 +4,7 @@ import importlib
 import logging
 import os
 import subprocess
+import sys
 import time
 from datetime import datetime
 
@@ -386,3 +387,9 @@ def veryify_args(actual, allowed_keys, msg_prefix):
     extra = list(actual_keys - set(allowed_keys))
     if len(extra) > 0:
         raise ValueError("%s %s" % (msg_prefix, extra))
+
+
+def check_required_program_args(args, msg):
+    if len([a for a in args if a is None]) > 0:
+        print(msg)
+        sys.exit(1)
