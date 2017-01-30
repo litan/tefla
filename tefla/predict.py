@@ -11,9 +11,10 @@ from tefla.utils import util
 
 @click.command()
 @click.option('--model', help='Relative path to model.')
-@click.option('--output_layer', default='predictions', help='Layer from which to extract features.')
+@click.option('--output_layer', default='predictions', show_default=True,
+              help='Layer from which to extract features.')
 @click.option('--training_cnf', help='Relative path to training config file.')
-@click.option('--predict_dir', help='Directory with test Images')
+@click.option('--predict_dir', help='Directory with test images')
 @click.option('--weights_from', help='Path to initial weights file.')
 @click.option('--tag', default='results', help='Name of the dataset')
 @click.option('--convert', is_flag=True,
