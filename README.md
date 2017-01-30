@@ -12,6 +12,7 @@ Tefla is a deep learning mini-framework that sits on top of Tensorflow. Tefla's 
 * Tensorboard visualization of epoch metrics, augmented images, model graphs, and layer activations, weights and gradients.
 * [Prediction][8] (with ensembling via mean score or voting).
 * [Metrics][9] on prediction outputs.
+* First class support for transfer learning and fine-tuning based on vgg16, resnet50, resnet101, and resnet152.
 * Serving of models via a REST API (*coming soon*).
 
 Tefla contains [command line scripts][10] to do batch preprocessing, training, prediction, and metrics, thus supporting a simple yet powerful deep learning workflow.
