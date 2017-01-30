@@ -1,0 +1,50 @@
+1. Remove Anaconda Python if any
+    vim ~/.bashrc 
+    comment the last line 
+    export PATH="/home/shivam/anaconda2/bin:$PATH"
+
+2. Install OS Level Dependencies
+    $sudo apt-get install build-essential
+    $sudo apt-get install python-dev
+	
+   Matplotlib prerequisite
+    $sudo apt-get install pkg-config libpng-dev libfreetype6-dev
+	
+   Scipy prerequisite
+    $sudo apt-get install gfortran libopenblas-dev liblapack-dev
+	
+   Pillow prerequisite
+    $sudo apt-get install libjpeg-dev
+
+3. Install PIP, VirtualEnv, Setuptools & update them
+    sudo apt-get install python-pip
+    $pip install --upgrade pip
+    $pip install --upgrade setuptools
+    $pip install virtualenv
+    $pip install --upgrade virtualenv
+
+4. cd to your virtual environment directory & create a virtual environment
+    $virtualenv --system-site-packages NameOfEnvironment 
+
+5. Activate the environment
+    $source NameOfEnvironemt/bin/activate
+
+6. Install GIT 
+    $sudo apt-get install git
+
+7. Clone the Tefla Repo by
+    $git clone https://github.com/litan/tefla.git 
+
+8. Install Tefla Dependencies
+    $pip install -r requirements.txt
+    Sometimes it breaks so install Numpy first
+    $pip install numpy==1.12.0
+    and then again install through requirement file
+    $pip install -r requirements.txt
+
+9. Finally install tensorflow 0.12.1
+    If installing on CPU
+    $pip install tensorflow
+    
+    If installing on GPU
+    $pip install tensorflow-gpu
