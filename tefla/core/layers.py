@@ -224,8 +224,11 @@ def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_c
             initializer=tf.ones_initializer(),
             trainable=False)
 
+        input_shape = helper.get_input_shape(x)
+        moments_axes = list(range(len(input_shape) - 1))
+
         def mean_inv_std_with_update():
-            mean, variance = tf.nn.moments(x, [0, 1, 2], shift=moving_mean, name='bn-moments')
+            mean, variance = tf.nn.moments(x, moments_axes, shift=moving_mean, name='bn-moments')
             inv_std = math_ops.rsqrt(variance + epsilon)
             update_moving_mean = moving_averages.assign_moving_average(
                 moving_mean, mean, decay, zero_debias=False)
@@ -237,7 +240,7 @@ def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_c
                 return m, v
 
         def mean_inv_std_with_pending_update():
-            mean, variance = tf.nn.moments(x, [0, 1, 2], shift=moving_mean, name='bn-moments')
+            mean, variance = tf.nn.moments(x, moments_axes, shift=moving_mean, name='bn-moments')
             inv_std = math_ops.rsqrt(variance + epsilon)
             update_moving_mean = moving_averages.assign_moving_average(
                 moving_mean, mean, decay, zero_debias=False)
