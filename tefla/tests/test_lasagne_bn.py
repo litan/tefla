@@ -93,7 +93,8 @@ def test_delayed_update_moving_vars():
         expected_inv_std = 1.0 / np.sqrt(np.var(image_values, axis=(0, 1, 2)) + epsilon)
         images = tf.constant(image_values, shape=image_shape, dtype=tf.float32)
         decay = 0.1
-        output = batch_norm(images, True, None, decay=decay, epsilon=epsilon, name="BatchNorm")
+        output = batch_norm(images, True, None, decay=decay, epsilon=epsilon, name="BatchNorm",
+                            updates_collections=tf.GraphKeys.UPDATE_OPS)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         # updates_ops are added to UPDATE_OPS collection.
         assert len(update_ops) == 2
