@@ -6,6 +6,7 @@ import tefla.utils.util as util
 @click.option('--model', default=None, show_default=True,
               help='Relative path to model.')
 def model_info(model):
+    util.check_required_program_args([model])
     model_def = util.load_module(model)
     model = model_def.model
     end_points = model(False, None)

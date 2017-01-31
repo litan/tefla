@@ -9,7 +9,7 @@ image_size = (224, 224)
 crop_size = (224, 224)
 
 
-# A model works on top of features extracted from layer vgg_16/conv5/maxpool5 of vgg16
+# A model that works on top of features extracted from layer vgg_16/conv5/maxpool5 of vgg16
 # These features can be extracted using tefla.predict with the --output_layer option
 def model(is_training, reuse):
     common_args = common_layer_args(is_training, reuse)
