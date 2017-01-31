@@ -53,7 +53,7 @@ def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm
 
         if batch_norm is not None:
             if isinstance(batch_norm, bool):
-                batch_norm = batch_norm_lasagne
+                batch_norm = batch_norm_tf
             batch_norm_args = batch_norm_args or {}
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
@@ -116,7 +116,7 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
 
         if batch_norm is not None:
             if isinstance(batch_norm, bool):
-                batch_norm = batch_norm_lasagne
+                batch_norm = batch_norm_tf
             batch_norm_args = batch_norm_args or {}
             output = batch_norm(output, is_training=is_training, reuse=reuse, trainable=trainable, **batch_norm_args)
 
@@ -201,7 +201,7 @@ def batch_norm_tf(x, scale=False, updates_collections=None, name='BatchNorm', **
     return _collect_named_outputs(outputs_collection, output.alias, output)
 
 
-def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=None,
+def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=tf.GraphKeys.UPDATE_OPS,
                        outputs_collections=None, trainable=True, name='bn'):
     with tf.variable_scope(name, reuse=reuse) as curr_scope:
         beta = tf.get_variable(
