@@ -214,10 +214,11 @@ class SupervisedTrainer(object):
                 custom_metrics_string = ''.join(custom_metrics_string)
 
                 logger.info(
-                    "Epoch %d [(%s, %s) images, %6.1fs]: t-loss: %.3f, v-loss: %.3f%s" %
+                    "Epoch %d [(%s, %s) images, %6.1fs]: t-loss: %.3f, v-loss: %.3f, t-loss/v-loss: %.3f%s" %
                     (epoch, np.sum(batch_train_sizes), np.sum(batch_validation_sizes), time.time() - tic,
                      epoch_training_loss,
                      epoch_validation_loss,
+                     epoch_training_loss / epoch_validation_loss,
                      custom_metrics_string)
                 )
 
