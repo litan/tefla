@@ -195,10 +195,13 @@ def feature_max_pool_1d(x, stride=2, outputs_collections=None, name='feature_max
 
 
 def batch_norm_tf(x, scale=False, updates_collections=None, name='BatchNorm', **kwargs):
-    return tf.contrib.layers.batch_norm(x, scope=name, scale=scale, updates_collections=updates_collections, **kwargs)
+    outputs_collection = kwargs.pop('outputs_collections', None)
+    output = tf.contrib.layers.batch_norm(x, scope=name, scale=scale, outputs_collections=None,
+                                          updates_collections=updates_collections, **kwargs)
+    return _collect_named_outputs(outputs_collection, output.alias, output)
 
 
-def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=tf.GraphKeys.UPDATE_OPS,
+def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=None,
                        outputs_collections=None, trainable=True, name='bn'):
     with tf.variable_scope(name, reuse=reuse) as curr_scope:
         beta = tf.get_variable(
