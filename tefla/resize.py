@@ -2,18 +2,13 @@
 from __future__ import division, print_function
 
 import os
-from PIL import Image, ImageFilter
+from PIL import Image
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 
 import click
-import numpy as np
-from skimage import filters
-from skimage import measure
-from skimage.color import rgb2gray
-from skimage.morphology import closing, square
 
-from tefla.da import data
+from tefla.utils import util
 
 N_PROC = cpu_count()
 
@@ -60,15 +55,12 @@ def save(img, fname):
 
 
 @click.command()
-@click.option('--directory', default='data/train', show_default=True,
-              help="Directory with original images.")
-@click.option('--convert_directory', default='data/train_res', show_default=True,
-              help="Where to save converted images.")
-@click.option('--target_size', default=256, show_default=True,
-              help="Size of converted images.")
-@click.option('--extension', default='tiff', show_default=True,
-              help="Filetype of converted images.")
+@click.option('--directory', help="Directory with original images.")
+@click.option('--convert_directory', help="Where to save converted images.")
+@click.option('--target_size', default=256, show_default=True, help="Size of converted images.")
+@click.option('--extension', default='tiff', show_default=True, help="Filetype of converted images.")
 def main(directory, convert_directory, target_size, extension):
+    util.check_required_program_args([directory, convert_directory])
     try:
         os.mkdir(convert_directory)
     except OSError:
