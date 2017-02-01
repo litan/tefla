@@ -235,7 +235,7 @@ def load_variables(sess, saver, weights_from, logger=None):
             printer("Loaded session/weights from %s" % weights_from)
         except Exception:
             printer("Couldn't load session/weights from %s; starting from scratch" % weights_from)
-            sess.run(tf.initialize_all_variables())
+            sess.run(tf.global_variables_initializer())
 
 
 def show_layer_shapes(end_points, logger=None):
