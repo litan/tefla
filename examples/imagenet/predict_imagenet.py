@@ -38,7 +38,7 @@ def predict(model, training_cnf, predict_dir, weights_from, dataset_name, conver
     standardizer = cnf.get('standardizer', NoOpStandardizer())
 
     preprocessor = convert_preprocessor(image_size) if convert else None
-    prediction_iterator = create_prediction_iter(cnf, standardizer, model_def.crop_size, preprocessor, sync)
+    prediction_iterator = create_prediction_iter(cnf, model_def.crop_size, preprocessor, sync)
 
     if predict_type == 'quasi':
         predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20)
