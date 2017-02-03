@@ -1,9 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import tensorflow as tf
+
 from tefla.core.layer_arg_ops import common_layer_args, make_args, end_points
 from tefla.core.layers import dropout, relu
-from tefla.core.layers import input, conv2d, fully_connected, max_pool, softmax
+from tefla.core.layers import input, conv2d, max_pool, softmax, alias, reshape
 
 # sizes - (width, height)
 image_size = (224, 224)
@@ -54,10 +55,12 @@ def model(is_training, reuse):
         x = conv2d(x, 4096, name='fc6', filter_size=(7, 7), padding='VALID', **conv_frozen_args)
         x = dropout(x, drop_p=0.5, name='dropout6', **common_args)
 
-        x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_frozen_args)
+        x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_args)
         x = dropout(x, drop_p=0.5, name='dropout7', **common_args)
 
-    logits = fully_connected(x, 2, name='logits', **logit_args)
-    predictions = softmax(logits, name='predictions', **common_args)
+        x = conv2d(x, 2, name='fc8', filter_size=(1, 1), **logit_args)
+        x = reshape(x, [-1, 2])
 
+    logits = alias(x, name='logits', **common_args)
+    predictions = softmax(x, name='predictions', **common_args)
     return end_points(is_training)
