@@ -71,5 +71,4 @@ def model(is_training, reuse, flexi_inputs=False):
         logits = squeeze(x, axis=[1, 2], name='logits', **common_args)
 
     predictions = softmax(logits, name='predictions', **common_args)
-
     return end_points(is_training)
