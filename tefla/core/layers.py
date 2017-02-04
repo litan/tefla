@@ -33,6 +33,13 @@ def reshape(x, shape, outputs_collections=None, name='reshape', **unused):
         return _collect_named_outputs(outputs_collections, curr_scope, x)
 
 
+def squeeze(x, axis, outputs_collections=None, name='squeeze', **unused):
+    _check_unused(unused, name)
+    with tf.name_scope(name) as curr_scope:
+        x = tf.squeeze(x, axis=axis)
+        return _collect_named_outputs(outputs_collections, curr_scope, x)
+
+
 def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm=None, batch_norm_args=None,
                     w_init=initz.he_normal(), use_bias=True, b_init=0.0, w_regularizer=tf.nn.l2_loss,
                     outputs_collections=None, trainable=True, name='fc'):
