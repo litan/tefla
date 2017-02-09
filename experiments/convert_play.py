@@ -183,7 +183,7 @@ def imshow(plt, image):
     plt.imshow(show_img, cmap='gray')
 
 
-images_dir = '/home/siddhant/work/img'
+images_dir = '~/images'
 
 files = data.get_image_files(images_dir)
 original_images = data.load_images(files)
