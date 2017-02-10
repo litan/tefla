@@ -136,7 +136,7 @@ def subplots(img,row_count,col_count,crop_img):
 
 #crops an image from both dark and light background
 #works best on a single color background
-def crop_image(fname):
+def crop_image(fname,target_size):
     print('Processing image: %s' % fname)
 
     #otsu thresholding
@@ -156,11 +156,15 @@ def crop_image(fname):
     h=find_boundary_reverse(row_white_pixel_count,col_white_pixel_count.size)
     x=find_boundary(col_white_pixel_count,row_white_pixel_count.size)
     w=find_boundary_reverse(col_white_pixel_count,row_white_pixel_count.size)
-    crop_img = ba[y:h, x:w]
+    crop_array = ba[y:h, x:w]
+
+    #resize the image
+    crop_img=Image.fromarray(crop_array)
+    resized = crop_img.resize([target_size, target_size])
 
     #uncomment below line to see histogram of both white pixel vs rows and white pixel vs columns
     #subplots(threshold2, row_white_pixel_count, col_white_pixel_count, crop_img)
-    return crop_img
+    return resized
 
 
 def draw_top_regions(properties, n0):
@@ -183,7 +187,7 @@ def imshow(plt, image):
     plt.imshow(show_img, cmap='gray')
 
 
-images_dir = '/home/siddhant/work/img'
+images_dir = '../experiments/images/'
 
 files = data.get_image_files(images_dir)
 original_images = data.load_images(files)
@@ -199,11 +203,11 @@ for j, file in enumerate(files):
     imshow(plt, img)
 
     plt.subplot(num, num_cols, j * num_cols + 3)
-    img = convert_new_regions(file, 512)
+    img = convert_new(file, 512)
     imshow(plt, img)
 
     plt.subplot(num, num_cols, j * num_cols + 4)
-    img = crop_image(file)
-    imshow(plt, img)
+    img = crop_image(file,512)
+    plt.imshow(img)
 
 plt.show()
