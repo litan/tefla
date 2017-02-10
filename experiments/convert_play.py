@@ -157,7 +157,11 @@ def crop_image(fname):
     x=find_boundary(col_white_pixel_count,row_white_pixel_count.size)
     w=find_boundary_reverse(col_white_pixel_count,row_white_pixel_count.size)
     crop_img = ba[y:h, x:w]
-
+    
+    #resize the image
+    crop_img=Image.fromarray(crop_array)
+    resized = crop_img.resize([target_size, target_size])
+    
     #uncomment below line to see histogram of both white pixel vs rows and white pixel vs columns
     #subplots(threshold2, row_white_pixel_count, col_white_pixel_count, crop_img)
     return crop_img
@@ -204,6 +208,6 @@ for j, file in enumerate(files):
 
     plt.subplot(num, num_cols, j * num_cols + 4)
     img = crop_image(file)
-    imshow(plt, img)
+    plt.imshow(img)
 
 plt.show()
