@@ -162,6 +162,7 @@ def crop_image(fname,target_size):
     crop_img=Image.fromarray(crop_array)
     resized = crop_img.resize([target_size, target_size])
 
+
     #uncomment below line to see histogram of both white pixel vs rows and white pixel vs columns
     #subplots(threshold2, row_white_pixel_count, col_white_pixel_count, crop_img)
     return resized
