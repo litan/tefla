@@ -231,6 +231,13 @@ def load_variables(sess, saver, weights_from, logger=None):
                     restorer.restore(sess, weights_from)
                 except Exception as e:
                     printer("Problem loading: %s -- %s" % (var.name, e.message))
+                    printer("Trying a reshaped load...")
+                    try:
+                        reshaped_val = reader.get_tensor(var.name[:-2]).reshape(var.get_shape().as_list())
+                        sess.run(var.assign(reshaped_val))
+                        printer("That worked. Reshaped value (%s) for %s loaded" % (reshaped_val.shape, var.name))
+                    except Exception as e:
+                        printer("That did not work. Giving up for %s" % var.name)
                     continue
             printer("Loaded session/weights from %s" % weights_from)
         except Exception:
