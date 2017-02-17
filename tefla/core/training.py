@@ -323,11 +323,11 @@ class SupervisedTrainer(object):
         with tf.name_scope('loss'):
             training_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    training_logits, self.target))
+                    logits=training_logits, labels=self.target))
 
             self.validation_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    validation_logits, self.target))
+                    logits=validation_logits, labels=self.target))
 
             l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             self.regularized_training_loss = training_loss + l2_loss * self.cnf.get('l2_reg', 0.0)
@@ -343,10 +343,10 @@ class SupervisedTrainer(object):
             self.target = tf.placeholder(tf.float32, shape=(None, 1), name='target')
         with tf.name_scope('loss'):
             training_loss = tf.reduce_mean(
-                tf.square(tf.sub(self.training_predictions, self.target)))
+                tf.square(tf.subtract(self.training_predictions, self.target)))
 
             self.validation_loss = tf.reduce_mean(
-                tf.square(tf.sub(self.validation_predictions, self.target)))
+                tf.square(tf.subtract(self.validation_predictions, self.target)))
 
             l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             self.regularized_training_loss = training_loss + l2_loss * self.cnf.get('l2_reg', 0.0)

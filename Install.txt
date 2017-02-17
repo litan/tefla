@@ -41,7 +41,7 @@
     and then again install through requirement file
     $pip install -r requirements.txt
 
-9. Install tensorflow 0.12.1
+9. Install tensorflow 1.0
     If installing on CPU
     $pip install tensorflow
     
@@ -51,4 +51,4 @@
 10. Finally install Tefla
     cd into the tefla code 
     $cd tefla
-    $pip install .
+    $pip install -e .

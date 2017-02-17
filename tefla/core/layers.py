@@ -218,7 +218,7 @@ def batch_norm_tf(x, scale=False, updates_collections=None, name='BatchNorm', **
     outputs_collection = kwargs.pop('outputs_collections', None)
     output = tf.contrib.layers.batch_norm(x, scope=name, scale=scale, outputs_collections=None,
                                           updates_collections=updates_collections, **kwargs)
-    return _collect_named_outputs(outputs_collection, output.alias, output)
+    return _collect_named_outputs(outputs_collection, output.aliases[0], output)
 
 
 def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_collections=tf.GraphKeys.UPDATE_OPS,
@@ -298,7 +298,7 @@ def prelu(x, reuse, outputs_collections=None, trainable=True, name='prelu', **un
             trainable=trainable
         )
 
-        output = tf.nn.relu(x) + tf.mul(alphas, (x - tf.abs(x))) * 0.5
+        output = tf.nn.relu(x) + tf.multiply(alphas, (x - tf.abs(x))) * 0.5
         return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, output)
 
 
@@ -312,7 +312,7 @@ def relu(x, outputs_collections=None, name='relu', **unused):
 def leaky_relu(x, alpha=0.01, outputs_collections=None, name='leaky_relu', **unused):
     _check_unused(unused, name)
     with tf.name_scope(name) as curr_scope:
-        output = tf.nn.relu(x) + tf.mul(alpha, (x - tf.abs(x))) * 0.5
+        output = tf.nn.relu(x) + tf.multiply(alpha, (x - tf.abs(x))) * 0.5
         return _collect_named_outputs(outputs_collections, curr_scope, output)
 
 
