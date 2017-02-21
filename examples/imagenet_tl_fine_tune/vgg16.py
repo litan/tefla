@@ -63,7 +63,7 @@ def model(is_training, reuse, flexi_inputs=False):
         x = conv2d(x, 4096, name='fc7', filter_size=(1, 1), **conv_frozen_args)
         x = dropout(x, drop_p=0.5, name='dropout7', **common_args)
 
-        x = conv2d(x, 2, name='fc8', filter_size=(1, 1), **logit_args)
+        x = conv2d(x, 6, name='fc8', filter_size=(1, 1), **logit_args)
 
     if flexi_inputs:
         logits = alias(x, name='logits', **common_args)
