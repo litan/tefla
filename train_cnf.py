@@ -11,21 +11,21 @@ cnf = {
     'iterator_type': 'queued',  # parallel or queued
     'batch_size_train': 16,
     'batch_size_test': 16,
-    'l2_reg': 0.005,
+    'l2_reg': 0.002,
     'aug_params': {
-        'zoom_range': (1 / 1.1, 1.1),
+        'zoom_range': (1 / 1.05, 1.05),
         'rotation_range': (-5, 5),
-        'shear_range': (1, 1),
+        'shear_range': (0, 0),
         'translation_range': (-20, 20),
         'do_flip': True,
         'allow_stretch': True,
     },
-    'num_epochs': 15,
+    'num_epochs': 100,
     'summary_every': 5,
     'lr_policy': StepDecayPolicy(
         schedule={
             0: 0.001,
-            10:0.0001,
+            15: 0.0001,
         }
     ),
     'optimizer': tf.train.AdamOptimizer(),

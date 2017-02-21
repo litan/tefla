@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-
+from tefla.utils import store_training_logs
 from tefla.core.lr_policy import NoDecayPolicy
 from tefla.da.iterator import BatchIterator
 from tefla.utils import util
@@ -19,7 +19,6 @@ TRAINING_BATCH_SUMMARIES = 'training_batch_summaries'
 TRAINING_EPOCH_SUMMARIES = 'training_epoch_summaries'
 VALIDATION_BATCH_SUMMARIES = 'validation_batch_summaries'
 VALIDATION_EPOCH_SUMMARIES = 'validation_epoch_summaries'
-
 
 class SupervisedTrainer(object):
     def __init__(self, model, cnf, training_iterator=BatchIterator(32, False),
@@ -102,6 +101,7 @@ class SupervisedTrainer(object):
 
             seed_delta = 100
             training_history = []
+            input = store_training_logs.delete_file('run_script_logs.pkl')
             for epoch in xrange(start_epoch, self.num_epochs + 1):
                 np.random.seed(epoch + seed_delta)
                 tf.set_random_seed(epoch + seed_delta)
@@ -221,6 +221,9 @@ class SupervisedTrainer(object):
                      epoch_training_loss / epoch_validation_loss,
                      custom_metrics_string)
                 )
+
+                if input =='y':
+                    store_training_logs.store_logs(epoch,epoch_validation_metrics[0],epoch_validation_metrics[1],epoch_training_loss,epoch_validation_loss,epoch_training_loss / epoch_validation_loss)
 
                 saver.save(sess, "%s/model-epoch-%d.ckpt" % (weights_dir, epoch))
 

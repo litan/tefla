@@ -131,7 +131,7 @@ def subplots(img,row_count,col_count,crop_img):
     plt.plot(np.array(col_count))
 
     plt.subplot(gs[3])
-    imshow(plt,crop_img)
+    plt.imshow(crop_img)
     plt.show()
 
 #crops an image from both dark and light background
@@ -164,7 +164,7 @@ def crop_image(fname,target_size):
 
 
     #uncomment below line to see histogram of both white pixel vs rows and white pixel vs columns
-    #subplots(threshold2, row_white_pixel_count, col_white_pixel_count, crop_img)
+    subplots(threshold2, row_white_pixel_count, col_white_pixel_count, crop_img)
     return resized
 
 
