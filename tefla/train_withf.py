@@ -28,7 +28,8 @@ import logging
 @click.option('--resume_lr', help='Learning rate for resumed training.')
 @click.option('--weights_from', help='Path to initial weights file.')
 @click.option('--clean', is_flag=True, help='Clean out training log and summary dir.')
-def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean):
+@click.option('--visuals', is_flag=False, help='Visualize your training using various graphs.')
+def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean,visuals=False):
     util.check_required_program_args([model, training_cnf, data_dir])
     model_def = util.load_module(model)
     model = model_def.model
@@ -43,7 +44,7 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
     validation_iter = BatchIterator(cnf['batch_size_test'], True)
     trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
     trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
-                summary_every=cnf.get('summary_every', 10), clean=clean)
+                summary_every=cnf.get('summary_every', 10), clean=clean,visuals=visuals)
 
 
 if __name__ == '__main__':
