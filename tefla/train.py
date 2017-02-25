@@ -11,6 +11,7 @@ tf.set_random_seed(127)
 from tefla.core.dir_dataset import DataSet
 from tefla.core.iter_ops import create_training_iters
 from tefla.core.training import SupervisedTrainer
+from tefla.core.training_multi_gpu import SupervisedTrainerN
 from tefla.utils import util
 import logging
 
@@ -24,7 +25,8 @@ import logging
 @click.option('--resume_lr', help='Learning rate for resumed training.')
 @click.option('--weights_from', help='Path to initial weights file.')
 @click.option('--clean', is_flag=True, help='Clean out training log and summary dir.')
-def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean):
+@click.option('--num_gpus', help='Number of gpus to use for training.')
+def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean, num_gpus):
     util.check_required_program_args([model, training_cnf, data_dir])
     model_def = util.load_module(model)
     model = model_def.model
@@ -37,9 +39,15 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
     data_set = DataSet(data_dir, model_def.image_size[0])
     training_iter, validation_iter = create_training_iters(cnf, data_set, model_def.crop_size, start_epoch,
                                                            cnf.get('iterator_type', 'queued') == 'parallel')
-    trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
-    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
-                summary_every=cnf.get('summary_every', 10), clean=clean)
+
+    if num_gpus is not None and int(num_gpus) > 1:
+        trainer = SupervisedTrainerN(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
+        trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
+                    summary_every=cnf.get('summary_every', 10), clean=clean, num_gpus=num_gpus)
+    else:
+        trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
+        trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
+                    summary_every=cnf.get('summary_every', 10), clean=clean)
 
 
 if __name__ == '__main__':

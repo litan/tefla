@@ -315,9 +315,9 @@ class SupervisedTrainer(object):
         self.validation_end_points = self.model(is_training=False, reuse=True)
         # beware - we're depending on _1 suffixes based on name scopes here
         self.validation_inputs = self.validation_end_points['inputs_1']
-        validation_logits, self.validation_predictions = self.validation_end_points['logits_1'], \
+        validation_logits, self.validation_predictions = self.validation_end_points['logits'], \
                                                          self.validation_end_points[
-                                                             'predictions_1']
+                                                             'predictions']
         with tf.name_scope('predictions'):
             self.target = tf.placeholder(tf.int32, shape=(None,), name='target')
         with tf.name_scope('loss'):

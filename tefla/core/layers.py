@@ -22,8 +22,7 @@ def input(shape, outputs_collections=None, name='inputs', **unused):
 
 def alias(x, outputs_collections=None, name='alias', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name) as curr_scope:
-        return _collect_named_outputs(outputs_collections, curr_scope, x)
+    return _collect_named_outputs(outputs_collections, name, x)
 
 
 def reshape(x, shape, outputs_collections=None, name='reshape', **unused):

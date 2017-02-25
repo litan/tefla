@@ -10,8 +10,8 @@ cnf = {
     'name': __name__.split('.')[-1],
     'classification': True,
     'iterator_type': 'parallel',  # parallel or queued
-    'batch_size_train': 128,
-    'batch_size_test': 128,
+    'batch_size_train': 256,
+    'batch_size_test': 256,
     'aug_params': {
         'zoom_range': (1 / 1.05, 1.05),
         'rotation_range': (-5, 5),

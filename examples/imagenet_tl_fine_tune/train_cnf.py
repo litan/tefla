@@ -9,8 +9,8 @@ cnf = {
     'name': __name__.split('.')[-1],
     'classification': True,
     'iterator_type': 'queued',  # parallel or queued
-    'batch_size_train': 32,
-    'batch_size_test': 32,
+    'batch_size_train': 128,
+    'batch_size_test': 128,
     # 'l2_reg': 0.0005,
     'aug_params': {
         'zoom_range': (1 / 1.05, 1.05),
