@@ -44,7 +44,7 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
     validation_iter = BatchIterator(cnf['batch_size_test'], True)
     trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
     trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
-                summary_every=cnf.get('summary_every', 10), clean=clean,visuals=visuals)
+                summary_every=cnf.get('summary_every', 10), clean=clean, visuals=visuals)
 
 
 if __name__ == '__main__':
