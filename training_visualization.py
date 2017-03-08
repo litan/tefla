@@ -1,6 +1,7 @@
 
 import click
 import tefla.train_withf as train_withf
+import tefla.train as train
 import shutil
 import pickle
 import os
@@ -18,7 +19,7 @@ def analyze_data():
          try:
              lists.append(pickle.load(file))
          except EOFError:
-            break
+             break
     return lists
 
 def find_best_epoch(list):
@@ -60,7 +61,7 @@ def visual_training(ctx):
     ctx.invoke(train_withf.main, model="examples/imagenet_tl_feature_extract/bottleneck_model.py",
                training_cnf="examples/imagenet_tl_feature_extract/train_cnf.py",
                data_dir=data_dir, resume_lr=float(resume_lr), start_epoch=int(start_epoch),visuals=True)
-
+    print "Analyzing Data..."
     list = analyze_data()
     print ("Finding best Weights ...")
     epoch = find_best_epoch(list)
