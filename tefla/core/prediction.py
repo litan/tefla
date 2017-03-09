@@ -53,7 +53,7 @@ class OneCropPredictor(PredictSessionMixin):
             predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
             data_predictions.append(predictions_e)
         data_predictions = np.vstack(data_predictions)
-        print('took %6.1f seconds' % (time.time() - tic))
+        print('took %6.2f seconds' % (time.time() - tic))
         return data_predictions
 
 
@@ -78,7 +78,7 @@ class InputFeaturesPredictor(PredictSessionMixin):
             predictions_e = sess.run(self.predictions, feed_dict={self.inputs: X})
             data_predictions.append(predictions_e)
         data_predictions = np.vstack(data_predictions)
-        print('took %6.1f seconds' % (time.time() - tic))
+        print('took %6.2f seconds' % (time.time() - tic))
         return data_predictions
 
 

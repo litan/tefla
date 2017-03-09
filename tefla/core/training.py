@@ -5,21 +5,21 @@ import os
 import pprint
 import shutil
 import time
-
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-
+from tefla.draw_plots import subplots2 as plot
+import matplotlib.lines as mlines
+from tefla.utils import store_training_logs
 from tefla.core.lr_policy import NoDecayPolicy
 from tefla.da.iterator import BatchIterator
 from tefla.utils import util
-
 logger = logging.getLogger('tefla')
 
 TRAINING_BATCH_SUMMARIES = 'training_batch_summaries'
 TRAINING_EPOCH_SUMMARIES = 'training_epoch_summaries'
 VALIDATION_BATCH_SUMMARIES = 'validation_batch_summaries'
 VALIDATION_EPOCH_SUMMARIES = 'validation_epoch_summaries'
-
 
 class SupervisedTrainer(object):
     def __init__(self, model, cnf, training_iterator=BatchIterator(32, False),
@@ -33,14 +33,14 @@ class SupervisedTrainer(object):
         self.validation_metrics_def = self.cnf.get('validation_scores', [])
         self.clip_norm = clip_norm
 
-    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0, clean=False):
+    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0, clean=False,visuals=False):
         self._setup_predictions_and_loss()
         self._setup_optimizer()
         self._setup_summaries()
         self._setup_misc()
         self._print_info(data_set, verbose)
         self._train_loop(data_set, weights_from, start_epoch, resume_lr, summary_every,
-                         verbose, clean)
+                         verbose, clean,visuals=visuals)
 
     def _setup_misc(self):
         self.num_epochs = self.cnf.get('num_epochs', 500)
@@ -71,7 +71,7 @@ class SupervisedTrainer(object):
         util.show_layer_shapes(self.training_end_points, logger)
 
     def _train_loop(self, data_set, weights_from, start_epoch, resume_lr, summary_every,
-                    verbose, clean):
+                    verbose, clean,visuals):
         training_X, training_y, validation_X, validation_y = \
             data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
         saver = tf.train.Saver(max_to_keep=None)
@@ -102,6 +102,18 @@ class SupervisedTrainer(object):
 
             seed_delta = 100
             training_history = []
+            if visuals:
+                train_loss_list=[]
+                val_loss_list=[]
+                val_kappa_list=[]
+                val_accu_list=[]
+                epoch_list=[]
+                plt.ion()
+                f, ax = plt.subplots(3, 1)
+                red_line = mlines.Line2D([], [], color='red', markersize=15, label='Training loss')
+                green_line = mlines.Line2D([], [], color='green', markersize=15, label='Validation loss')
+                ax[0].legend(handles=[red_line,green_line], prop={'size': 8})
+            store_training_logs.delete_file('run_script_logs.pkl')
             for epoch in xrange(start_epoch, self.num_epochs + 1):
                 np.random.seed(epoch + seed_delta)
                 tf.set_random_seed(epoch + seed_delta)
@@ -221,6 +233,15 @@ class SupervisedTrainer(object):
                      epoch_training_loss / epoch_validation_loss,
                      custom_metrics_string)
                 )
+                if visuals:
+                    train_loss_list.append(epoch_training_loss)
+                    val_loss_list.append(epoch_validation_loss)
+                    val_accu_list.append(epoch_validation_metrics[0])
+                    val_kappa_list.append(epoch_validation_metrics[1])
+                    epoch_list.append(epoch)
+                    plot(ax,epoch_list,train_loss_list,val_loss_list,val_accu_list,val_kappa_list,epoch,epoch_validation_metrics[0],epoch_validation_metrics[1],epoch_training_loss,epoch_validation_loss)
+                store_training_logs.store_logs(epoch,epoch_validation_metrics[0],epoch_validation_metrics[1],epoch_training_loss,epoch_validation_loss,epoch_training_loss / epoch_validation_loss)
+
 
                 saver.save(sess, "%s/model-epoch-%d.ckpt" % (weights_dir, epoch))
 
@@ -236,7 +257,8 @@ class SupervisedTrainer(object):
                 if verbose > 0:
                     logger.info("Next epoch learning rate: %f " % learning_rate_value)
                 logger.debug('10. Epoch done. [%d]' % epoch)
-
+            if visuals:
+                raw_input('Press any key to continue...')
             train_writer.close()
             validation_writer.close()
 
@@ -404,3 +426,4 @@ def _clip_grad_norms(self, gradients_to_variables, max_norm=5):
                 grad = tf.clip_by_norm(grad, max_norm)
         grads_and_vars.append((grad, var))
     return grads_and_vars
+
