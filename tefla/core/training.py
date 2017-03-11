@@ -13,9 +13,9 @@ import tensorflow as tf
 
 from tefla.core.lr_policy import NoDecayPolicy
 from tefla.da.iterator import BatchIterator
-from tefla.draw_plots import subplots2 as plot
 from tefla.utils import store_training_logs
 from tefla.utils import util
+from tefla.utils.draw_plots import subplots2 as plot
 
 logger = logging.getLogger('tefla')
 
