@@ -25,7 +25,7 @@ from tefla.utils import util
               help='Do all processing on the calling thread.')
 @click.option('--predict_type', default='quasi', show_default=True,
               help='Specify predict type: quasi, 1_crop or 10_crop')
-def predict(model, output_layer, training_cnf, predict_dir, weights_from, tag, convert, image_size, sync,
+def predict_command(model, output_layer, training_cnf, predict_dir, weights_from, tag, convert, image_size, sync,
             predict_type):
     util.check_required_program_args([model, training_cnf, predict_dir, weights_from])
     model_def = util.load_module(model)
@@ -33,20 +33,8 @@ def predict(model, output_layer, training_cnf, predict_dir, weights_from, tag, c
     cnf = util.load_module(training_cnf).cnf
     weights_from = str(weights_from)
     images = data.get_image_files(predict_dir)
-
-    preprocessor = convert_preprocessor(image_size) if convert else None
-    prediction_iterator = create_prediction_iter(cnf, model_def.crop_size, preprocessor, sync)
-
-    if predict_type == 'quasi':
-        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20, output_layer)
-    elif predict_type == '1_crop':
-        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, output_layer)
-    elif predict_type == '10_crop':
-        predictor = TenCropPredictor(model, cnf, weights_from, prediction_iterator, model_def.crop_size[0],
-                                     model_def.image_size[0], output_layer)
-    else:
-        raise ValueError('Unknown predict_type: %s' % predict_type)
-    predictions = predictor.predict(images)
+    predictions = predict(model, model_def, output_layer, cnf, weights_from, convert, images, image_size, sync,
+                          predict_type)
 
     prediction_results_dir = os.path.abspath(os.path.join(predict_dir, '..', 'predictions', tag))
     if not os.path.exists(prediction_results_dir):
@@ -76,6 +64,22 @@ def predict(model, output_layer, training_cnf, predict_dir, weights_from, tag, c
         np.save(features_file, predictions)
         print('Features from layer: %s saved to: %s' % (output_layer, features_file))
 
+def predict(model, model_def, output_layer, cnf, weights_from, convert,images, image_size, sync, predict_type):
+    preprocessor = convert_preprocessor(image_size) if convert else None
+    prediction_iterator = create_prediction_iter(cnf, model_def.crop_size, preprocessor, sync)
+
+    if predict_type == 'quasi':
+        predictor = QuasiCropPredictor(model, cnf, weights_from, prediction_iterator, 20, output_layer)
+    elif predict_type == '1_crop':
+        predictor = OneCropPredictor(model, cnf, weights_from, prediction_iterator, output_layer)
+    elif predict_type == '10_crop':
+        predictor = TenCropPredictor(model, cnf, weights_from, prediction_iterator, model_def.crop_size[0],
+                                     model_def.image_size[0], output_layer)
+    else:
+        raise ValueError('Unknown predict_type: %s' % predict_type)
+    predictions = predictor.predict(images)
+
+    return predictions
 
 if __name__ == '__main__':
-    predict()
+    predict_command()

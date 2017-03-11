@@ -21,7 +21,7 @@ from tefla.utils import util
 @click.option('--tag', default='results', help='Name of the dataset')
 @click.option('--sync', is_flag=True,
               help='Do all processing on the calling thread.')
-def predict(model, training_cnf, features_file, images_dir, weights_from, tag, sync, ):
+def predict_command(model, training_cnf, features_file, images_dir, weights_from, tag, sync, ):
     util.check_required_program_args([model, training_cnf, features_file, images_dir, weights_from])
     model_def = util.load_module(model)
     model = model_def.model
@@ -29,10 +29,7 @@ def predict(model, training_cnf, features_file, images_dir, weights_from, tag, s
     weights_from = str(weights_from)
     image_features = np.load(features_file)
     images = data.get_image_files(images_dir)
-
-    predictor = InputFeaturesPredictor(model, cnf, weights_from)
-    predictions = predictor.predict(image_features)
-
+    predictions = predict_withf(model, cnf, weights_from, image_features)
     predict_dir = os.path.dirname(features_file)
     prediction_results_dir = os.path.abspath(os.path.join(predict_dir, 'predictions', tag))
     if not os.path.exists(prediction_results_dir):
@@ -46,7 +43,6 @@ def predict(model, training_cnf, features_file, images_dir, weights_from, tag, s
     prediction_probs_file = os.path.join(prediction_results_dir, 'predictions.csv')
     np.savetxt(prediction_probs_file, image_prediction_probs, delimiter=",", fmt="%s")
     print('Predictions saved to: %s' % prediction_probs_file)
-
     if cnf['classification']:
         class_predictions = np.argmax(predictions, axis=1)
         image_class_predictions = np.column_stack([names, class_predictions])
@@ -56,6 +52,11 @@ def predict(model, training_cnf, features_file, images_dir, weights_from, tag, s
         np.savetxt(prediction_class_file, image_class_predictions, delimiter=",", fmt="%s")
         print('Class predictions saved to: %s' % prediction_class_file)
 
+def predict_withf(model, cnf, weights_from,image_features):
+    predictor = InputFeaturesPredictor(model, cnf, weights_from)
+    predictions = predictor.predict(image_features)
+    return predictions
+
 
 if __name__ == '__main__':
-    predict()
+    predict_command()

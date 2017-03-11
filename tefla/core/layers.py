@@ -17,13 +17,12 @@ def input(shape, outputs_collections=None, name='inputs', **unused):
     _check_unused(unused, name)
     with tf.name_scope(name) as curr_scope:
         inputs = tf.placeholder(tf.float32, shape=shape, name="input")
-        return _collect_named_outputs(outputs_collections, curr_scope, inputs)
+        return _collect_named_outputs(outputs_collections, name, inputs)
 
 
 def alias(x, outputs_collections=None, name='alias', **unused):
     _check_unused(unused, name)
-    with tf.name_scope(name) as curr_scope:
-        return _collect_named_outputs(outputs_collections, curr_scope, x)
+    return _collect_named_outputs(outputs_collections, name, x)
 
 
 def reshape(x, shape, outputs_collections=None, name='reshape', **unused):
@@ -238,7 +237,7 @@ def batch_norm_lasagne(x, is_training, reuse, decay=0.9, epsilon=1e-4, updates_c
         moving_mean = tf.get_variable(
             name='moving_mean',
             shape=[x.get_shape()[-1]],
-            initializer=tf.zeros_initializer,
+            initializer=tf.zeros_initializer(),
             trainable=False)
 
         moving_inv_std = tf.get_variable(
@@ -320,7 +319,7 @@ def softmax(x, outputs_collections=None, name='softmax', **unused):
     _check_unused(unused, name)
     with tf.name_scope(name) as curr_scope:
         output = tf.nn.softmax(x)
-        return _collect_named_outputs(outputs_collections, curr_scope, output)
+        return _collect_named_outputs(outputs_collections, name, output)
 
 
 def dropout(x, is_training, drop_p=0.5, outputs_collections=None, name='dropout', **unused):

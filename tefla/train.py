@@ -13,6 +13,7 @@ from tefla.core.iter_ops import create_training_iters
 from tefla.core.training import SupervisedTrainer
 from tefla.utils import util
 import logging
+import sys
 
 
 @click.command()
@@ -27,6 +28,7 @@ import logging
 @click.option('--visuals', is_flag=True, help='Visualize your training using various graphs.')
 def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean,visuals):
     util.check_required_program_args([model, training_cnf, data_dir])
+    sys.path.insert(0, '.')
     model_def = util.load_module(model)
     model = model_def.model
     cnf = util.load_module(training_cnf).cnf
