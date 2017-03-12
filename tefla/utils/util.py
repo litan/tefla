@@ -169,7 +169,7 @@ def accuracy_wrapper(y_true, y_pred):
 
 
 def dump_vars(sess):
-    all_vars = set(tf.all_variables())
+    all_vars = set(tf.global_variables())
     trainable_vars = set(tf.trainable_variables())
     non_trainable_vars = all_vars.difference(trainable_vars)
 
