@@ -34,8 +34,9 @@ def main(data_dir, labels_file, train_size, val_size):
     train_df = pd.DataFrame(dict(image=X_train, level=y_train))
     val_df = pd.DataFrame(dict(image=X_val, level=y_val))
 
-    dest_dir = os.path.dirname(os.path.abspath(data_dir)) + '/sample'
-    im_size = int(os.path.basename(os.path.abspath(data_dir)).split('_')[1])
+    data_dir = os.path.abspath(data_dir)
+    dest_dir = os.path.dirname(data_dir) + '/sample'
+    im_size = int(os.path.basename(data_dir).split('_')[1])
 
     dirs = [dest_dir, '%s/training_%d' % (dest_dir, im_size), '%s/validation_%d' % (dest_dir, im_size)]
     for d in dirs:

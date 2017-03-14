@@ -26,7 +26,7 @@ VALIDATION_EPOCH_SUMMARIES = 'validation_epoch_summaries'
 
 
 class SupervisedTrainer(object):
-    def __init__(self, model, cnf, training_iterator=BatchIterator(32, False),
+    def __init__(self, model, cnf, trainable_scopes=None, training_iterator=BatchIterator(32, False),
                  validation_iterator=BatchIterator(128, False), classification=True, clip_norm=False):
         self.model = model
         self.cnf = cnf
@@ -36,16 +36,17 @@ class SupervisedTrainer(object):
         self.lr_policy = cnf.get('lr_policy', NoDecayPolicy(0.01))
         self.validation_metrics_def = self.cnf.get('validation_scores', [])
         self.clip_norm = clip_norm
+        self.trainable_scopes = trainable_scopes
 
-    def fit(self, data_set, weights_from=None, start_epoch=1, resume_lr=None, summary_every=10, verbose=0, clean=False,
-            visuals=False):
+    def fit(self, data_set, weights_from=None, weights_exclude_scopes=None, start_epoch=1,
+            resume_lr=None, summary_every=10, verbose=0, clean=False, visuals=False):
         self._setup_predictions_and_loss()
         self._setup_optimizer()
         self._setup_summaries()
         self._setup_misc()
         self._print_info(data_set, verbose)
-        self._train_loop(data_set, weights_from, start_epoch, resume_lr, summary_every,
-                         verbose, clean, visuals=visuals)
+        self._train_loop(data_set, weights_from, weights_exclude_scopes, start_epoch, resume_lr,
+                         summary_every, verbose, clean, visuals=visuals)
 
     def _setup_misc(self):
         self.num_epochs = self.cnf.get('num_epochs', 500)
@@ -61,7 +62,7 @@ class SupervisedTrainer(object):
         data_set.print_info()
         logger.info('Max epochs: %d' % self.num_epochs)
         if verbose > 0:
-            util.show_vars(logger)
+            util.show_vars(logger, self.trainable_scopes)
 
         # logger.debug("\n---Number of Regularizable vars in model:")
         # logger.debug(len(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)))
@@ -75,8 +76,8 @@ class SupervisedTrainer(object):
 
         util.show_layer_shapes(self.training_end_points, logger)
 
-    def _train_loop(self, data_set, weights_from, start_epoch, resume_lr, summary_every,
-                    verbose, clean, visuals):
+    def _train_loop(self, data_set, weights_from, weights_exclude_scopes, start_epoch, resume_lr,
+                    summary_every, verbose, clean, visuals):
         training_X, training_y, validation_X, validation_y = \
             data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
         saver = tf.train.Saver(max_to_keep=None)
@@ -98,7 +99,7 @@ class SupervisedTrainer(object):
             batch_iters_per_epoch = int(round(len(data_set.training_X) / self.training_iterator.batch_size))
             learning_rate_value = self.lr_policy.initial_lr
             if weights_from:
-                util.load_variables(sess, saver, weights_from, logger)
+                util.load_variables(sess, saver, weights_from, weights_exclude_scopes, logger)
                 learning_rate_value = self.lr_policy.resume_lr(start_epoch, batch_iters_per_epoch, resume_lr)
 
             logger.info("Initial learning rate: %f " % learning_rate_value)
@@ -309,7 +310,8 @@ class SupervisedTrainer(object):
         # Keep old variable around to load old params, till we need this
         self.obsolete_learning_rate = tf.Variable(1.0, trainable=False, name="learning_rate")
         optimizer = self._create_optimizer()
-        self.grads_and_vars = optimizer.compute_gradients(self.regularized_training_loss, tf.trainable_variables())
+        self.grads_and_vars = optimizer.compute_gradients(self.regularized_training_loss,
+                                                          util.trainable_variables(self.trainable_scopes))
         if self.clip_norm:
             self.grads_and_vars = _clip_grad_norms(self.grads_and_vars)
         self.optimizer_step = optimizer.apply_gradients(self.grads_and_vars)
@@ -403,6 +405,9 @@ def _create_summary_writer(summary_dir, sess, clean):
 
 
 def variable_summaries(var, name, collections, extensive=False):
+    if var is None:
+        return
+
     if extensive:
         mean = tf.reduce_mean(var)
         tf.summary.scalar('mean/' + name, mean, collections=collections)

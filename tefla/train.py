@@ -24,9 +24,12 @@ import sys
               help='Epoch number from which to resume training.')
 @click.option('--resume_lr', help='Learning rate for resumed training.')
 @click.option('--weights_from', help='Path to initial weights file.')
+@click.option('--weights_exclude_scopes', help='Scopes not to load from weights file.')
+@click.option('--trainable_scopes', help='Scopes to train.')
 @click.option('--clean', is_flag=True, help='Clean out training log and summary dir.')
 @click.option('--visuals', is_flag=True, help='Visualize your training using various graphs.')
-def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, clean,visuals):
+def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, weights_exclude_scopes, trainable_scopes,
+         clean, visuals):
     util.check_required_program_args([model, training_cnf, data_dir])
     sys.path.insert(0, '.')
     model_def = util.load_module(model)
@@ -40,9 +43,10 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
     data_set = DataSet(data_dir, model_def.image_size[0])
     training_iter, validation_iter = create_training_iters(cnf, data_set, model_def.crop_size, start_epoch,
                                                            cnf.get('iterator_type', 'queued') == 'parallel')
-    trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
-    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
-                summary_every=cnf.get('summary_every', 10), clean=clean,visuals=visuals)
+    trainer = SupervisedTrainer(model, cnf, trainable_scopes, training_iter, validation_iter,
+                                classification=cnf['classification'])
+    trainer.fit(data_set, weights_from, weights_exclude_scopes, start_epoch, resume_lr, verbose=1,
+                summary_every=cnf.get('summary_every', 10), clean=clean, visuals=visuals)
 
 
 if __name__ == '__main__':

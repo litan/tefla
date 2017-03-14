@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import importlib
 import logging
 import os
+import pprint
 import subprocess
 import sys
 import time
@@ -168,9 +169,21 @@ def accuracy_wrapper(y_true, y_pred):
     return accuracy_score(y_true, y_pred.argmax(axis=1))
 
 
-def dump_vars(sess):
+def trainable_variables(trainable_scopes=None):
+    if trainable_scopes is None:
+        return tf.trainable_variables()
+    else:
+        scopes = [scope.strip() for scope in trainable_scopes.split(',')]
+        variables_to_train = []
+        for scope in scopes:
+            vars_in_scope = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+            variables_to_train.extend(vars_in_scope)
+        return variables_to_train
+
+
+def dump_vars(sess, trainable_scopes=None):
     all_vars = set(tf.global_variables())
-    trainable_vars = set(tf.trainable_variables())
+    trainable_vars = set(trainable_variables(trainable_scopes))
     non_trainable_vars = all_vars.difference(trainable_vars)
 
     def _dump_set(var_set):
@@ -187,62 +200,101 @@ def dump_vars(sess):
     print("-----------")
 
 
-def show_vars(logger=None):
+def show_vars(logger=None, trainable_scopes=None):
     printer = logger.info if logger is not None else print
     all_vars = set(tf.global_variables())
-    trainable_vars = set(tf.trainable_variables())
+    trainable_vars = set(trainable_variables(trainable_scopes))
     non_trainable_vars = all_vars.difference(trainable_vars)
     local_vars = set(tf.local_variables())
 
     class nonlocal: pass
 
-    nonlocal.total_params = 0
+    nonlocal.num_params = {}
 
     def show_var_info(vars, var_type):
         printer('\n---%s vars in model:' % var_type)
         name_shapes = map(lambda v: (v.name, v.get_shape()), vars)
+        total_params = 0
         for n, s in sorted(name_shapes, key=lambda ns: ns[0]):
             printer('%s %s' % (n, s))
-            nonlocal.total_params += np.prod(s.as_list())
+            total_params += np.prod(s.as_list())
+        nonlocal.num_params[var_type] = total_params
 
     show_var_info(trainable_vars, 'Trainable')
     show_var_info(non_trainable_vars, 'Non Trainable')
     show_var_info(local_vars, 'Local')
-    printer('Total number of params: %d' % nonlocal.total_params)
+    printer('Total number of params:')
+    printer(pprint.pformat(nonlocal.num_params))
 
 
-def load_variables(sess, saver, weights_from, logger=None):
+def load_variables(sess, saver, weights_from, weights_exclude_scopes=None, logger=None):
+    if weights_exclude_scopes is None:
+        _load_variables(sess, saver, weights_from, logger)
+    else:
+        _load_variables_with_scopes(sess, saver, weights_from, weights_exclude_scopes, logger)
+
+
+def _load_variables_with_scopes(sess, saver, weights_from, weights_exclude_scopes, logger):
+    exclusions = [scope.strip() for scope in weights_exclude_scopes.split(',')]
+    variables_to_restore = []
+    slim = tf.contrib.slim
+    for var in slim.get_model_variables():
+        excluded = False
+        for exclusion in exclusions:
+            if var.op.name.startswith(exclusion):
+                excluded = True
+                break
+        if not excluded:
+            variables_to_restore.append(var)
+
+    printer = logger.info if logger is not None else print
+    printer("---Loading session/weights from %s using scopes..." % weights_from)
+    restorer = tf.train.Saver(variables_to_restore)
+    try:
+        restorer.restore(sess, weights_from)
+    except Exception as e:
+        printer("Unable to restore entire session from checkpoint. Error: %s." % e.message)
+        raise e
+
+
+def _load_variables(sess, saver, weights_from, logger):
     printer = logger.info if logger is not None else print
     printer("---Loading session/weights from %s..." % weights_from)
     try:
         saver.restore(sess, weights_from)
     except Exception as e:
         printer("Unable to restore entire session from checkpoint. Error: %s." % e.message)
-        printer("Doing selective restore.")
+        printer("Doing restore of trainable vars only.")
+        restorer = tf.train.Saver(trainable_variables())
         try:
-            reader = tf.train.NewCheckpointReader(weights_from)
-            names_to_restore = set(reader.get_variable_to_shape_map().keys())
-            variables_to_restore = [v for v in tf.global_variables() if v.name[:-2] in names_to_restore]
-            printer("Loading %d variables: " % len(variables_to_restore))
-            for var in variables_to_restore:
-                printer("Loading: %s %s)" % (var.name, var.get_shape()))
-                restorer = tf.train.Saver([var])
-                try:
-                    restorer.restore(sess, weights_from)
-                except Exception as e:
-                    printer("Problem loading: %s -- %s" % (var.name, e.message))
-                    printer("Trying a reshaped load...")
+            restorer.restore(sess, weights_from)
+        except Exception as e:
+            printer("Unable to restore trainable vars from checkpoint. Error: %s." % e.message)
+            printer("Doing selective restore.")
+            try:
+                reader = tf.train.NewCheckpointReader(weights_from)
+                names_to_restore = set(reader.get_variable_to_shape_map().keys())
+                variables_to_restore = [v for v in tf.global_variables() if v.name[:-2] in names_to_restore]
+                printer("Loading %d variables: " % len(variables_to_restore))
+                for var in variables_to_restore:
+                    printer("Loading: %s %s)" % (var.name, var.get_shape()))
+                    restorer = tf.train.Saver([var])
                     try:
-                        reshaped_val = reader.get_tensor(var.name[:-2]).reshape(var.get_shape().as_list())
-                        sess.run(var.assign(reshaped_val))
-                        printer("That worked. Reshaped value (%s) for %s loaded" % (reshaped_val.shape, var.name))
+                        restorer.restore(sess, weights_from)
                     except Exception as e:
-                        printer("That did not work. Giving up for %s" % var.name)
-                    continue
-            printer("Loaded session/weights from %s" % weights_from)
-        except Exception:
-            printer("Couldn't load session/weights from %s; starting from scratch" % weights_from)
-            sess.run(tf.global_variables_initializer())
+                        printer("Problem loading: %s -- %s" % (var.name, e.message))
+                        printer("Trying a reshaped load...")
+                        try:
+                            reshaped_val = reader.get_tensor(var.name[:-2]).reshape(var.get_shape().as_list())
+                            sess.run(var.assign(reshaped_val))
+                            printer("That worked. Reshaped value (%s) for %s loaded" % (reshaped_val.shape, var.name))
+                        except Exception as e:
+                            printer("That did not work. Giving up for %s" % var.name)
+                        continue
+                printer("Loaded session/weights from %s" % weights_from)
+            except Exception:
+                printer("Couldn't load session/weights from %s; starting from scratch" % weights_from)
+                sess.run(tf.global_variables_initializer())
 
 
 def show_layer_shapes(end_points, logger=None):

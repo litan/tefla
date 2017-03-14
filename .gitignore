@@ -92,5 +92,6 @@ weights*/
 .idea/
 *.*~
 amodels/
+drmodels/
 examples/**/*data
 *play.py
