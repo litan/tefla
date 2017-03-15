@@ -25,6 +25,12 @@ def alias(x, outputs_collections=None, name='alias', **unused):
     return _collect_named_outputs(outputs_collections, name, name, x)
 
 
+def alias_scoped(x, outputs_collections=None, name='alias', **unused):
+    _check_unused(unused, name)
+    with tf.name_scope(name) as curr_scope:
+        return _collect_named_outputs(outputs_collections, curr_scope, curr_scope, x)
+
+
 def reshape(x, shape, outputs_collections=None, name='reshape', **unused):
     _check_unused(unused, name)
     with tf.name_scope(name) as curr_scope:
@@ -143,6 +149,45 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
             output = activation(output, is_training=is_training, reuse=reuse, trainable=trainable)
 
         return _collect_named_outputs(outputs_collections, curr_scope.original_name_scope, name, output)
+
+
+# ported from tf-slim models
+def conv2d_same(inputs, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=(1, 1), dilation_rate=1,
+                activation=None, batch_norm=None, batch_norm_args=None, w_init=initz.he_normal(),
+                use_bias=True, untie_biases=False, b_init=0.0, w_regularizer=tf.nn.l2_loss,
+                outputs_collections=None, trainable=True, name='conv2d_same'):
+    """Strided 2-D convolution with 'SAME' padding.
+    When stride > 1, then we do explicit zero-padding, followed by conv2d with
+    'VALID' padding.
+    Note that
+       net = conv2d_same(inputs, num_outputs, 3, stride=stride)
+    is equivalent to
+       net = slim.conv2d(inputs, num_outputs, 3, stride=1, padding='SAME')
+       net = subsample(net, factor=stride)
+    whereas
+       net = slim.conv2d(inputs, num_outputs, 3, stride=stride, padding='SAME')
+    is different when the input's height or width is even, which is why we add the
+    current function. For more details, see ResnetUtilsTest.testConv2DSameEven().
+    """
+    if stride[0] == 1:
+        return conv2d(inputs, n_output_channels, is_training, reuse, filter_size=filter_size, stride=stride,
+                      dilation_rate=dilation_rate, padding='SAME', activation=activation, batch_norm=batch_norm,
+                      batch_norm_args=batch_norm_args, w_init=w_init, use_bias=use_bias, untie_biases=untie_biases,
+                      b_init=b_init, w_regularizer=w_regularizer, outputs_collections=outputs_collections,
+                      trainable=trainable, name=name)
+    else:
+        kernel_size = filter_size[0]
+        kernel_size_effective = kernel_size + (kernel_size - 1) * (dilation_rate - 1)
+        pad_total = kernel_size_effective - 1
+        pad_beg = pad_total // 2
+        pad_end = pad_total - pad_beg
+        inputs = tf.pad(inputs,
+                        [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
+        return conv2d(inputs, n_output_channels, is_training, reuse, filter_size=filter_size, stride=stride,
+                      dilation_rate=dilation_rate, padding='VALID', activation=activation, batch_norm=batch_norm,
+                      batch_norm_args=batch_norm_args, w_init=w_init, use_bias=use_bias, untie_biases=untie_biases,
+                      b_init=b_init, w_regularizer=w_regularizer, outputs_collections=outputs_collections,
+                      trainable=trainable, name=name)
 
 
 def max_pool(x, filter_size=(3, 3), stride=(2, 2), padding='VALID', outputs_collections=None, name='max_pool',
@@ -348,6 +393,14 @@ def _collect_named_outputs(outputs_collections, name, core_name, output):
         tf.add_to_collection(outputs_collections, NamedOutputs(name, output))
         if name != core_name and core_name in ['inputs', 'logits', 'predictions']:
             tf.add_to_collection(outputs_collections, NamedOutputs(core_name, output))
+    return output
+
+
+def collect_named_outputs(outputs_collections, name, output):
+    if name[-1] == '/':
+        name = name[:-1]
+    if outputs_collections is not None:
+        tf.add_to_collection(outputs_collections, NamedOutputs(name, output))
     return output
 
 
