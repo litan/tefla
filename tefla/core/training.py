@@ -108,18 +108,7 @@ class SupervisedTrainer(object):
 
             seed_delta = 100
             training_history = []
-            if visuals:
-                train_loss_list = []
-                val_loss_list = []
-                val_kappa_list = []
-                val_accu_list = []
-                epoch_list = []
-                plt.ion()
-                f, ax = plt.subplots(3, 1)
-                red_line = mlines.Line2D([], [], color='red', markersize=15, label='Training loss')
-                green_line = mlines.Line2D([], [], color='green', markersize=15, label='Validation loss')
-                ax[0].legend(handles=[red_line, green_line], prop={'size': 8})
-            store_training_logs.delete_file('run_script_logs.pkl')
+            tviz = TrainViz(visuals)
             for epoch in xrange(start_epoch, self.num_epochs + 1):
                 np.random.seed(epoch + seed_delta)
                 tf.set_random_seed(epoch + seed_delta)
@@ -239,19 +228,7 @@ class SupervisedTrainer(object):
                      epoch_training_loss / epoch_validation_loss,
                      custom_metrics_string)
                 )
-                if visuals:
-                    train_loss_list.append(epoch_training_loss)
-                    val_loss_list.append(epoch_validation_loss)
-                    val_accu_list.append(epoch_validation_metrics[0])
-                    val_kappa_list.append(epoch_validation_metrics[1])
-                    epoch_list.append(epoch)
-                    plot(ax, epoch_list, train_loss_list, val_loss_list, val_accu_list, val_kappa_list, epoch,
-                         epoch_validation_metrics[0], epoch_validation_metrics[1], epoch_training_loss,
-                         epoch_validation_loss)
-                store_training_logs.store_logs(epoch, epoch_validation_metrics[0], epoch_validation_metrics[1],
-                                               epoch_training_loss, epoch_validation_loss,
-                                               epoch_training_loss / epoch_validation_loss)
-
+                tviz.epoch_end(epoch, epoch_training_loss, epoch_validation_loss, epoch_validation_metrics)
                 saver.save(sess, "%s/model-epoch-%d.ckpt" % (weights_dir, epoch))
 
                 epoch_info = dict(
@@ -438,3 +415,38 @@ def _clip_grad_norms(self, gradients_to_variables, max_norm=5):
                 grad = tf.clip_by_norm(grad, max_norm)
         grads_and_vars.append((grad, var))
     return grads_and_vars
+
+
+class TrainViz(object):
+    def __init__(self, visuals):
+        self.visuals = visuals
+        if visuals:
+            self.train_loss_list = []
+            self.val_loss_list = []
+            self.val_kappa_list = []
+            self.val_accu_list = []
+            self.epoch_list = []
+            plt.ion()
+            self.f, self.ax = plt.subplots(3, 1)
+            red_line = mlines.Line2D([], [], color='red', markersize=15, label='Training loss')
+            green_line = mlines.Line2D([], [], color='green', markersize=15, label='Validation loss')
+            self.ax[0].legend(handles=[red_line, green_line], prop={'size': 8})
+        store_training_logs.delete_file('run_script_logs.pkl')
+
+    def epoch_end(self, epoch, epoch_training_loss, epoch_validation_loss, epoch_validation_metrics):
+        # we currently expect a couple of metrics; so check for that
+        # need to be made more general!
+        if len(epoch_validation_metrics) == 2:
+            if self.visuals:
+                self.train_loss_list.append(epoch_training_loss)
+                self.val_loss_list.append(epoch_validation_loss)
+                self.val_accu_list.append(epoch_validation_metrics[0])
+                self.val_kappa_list.append(epoch_validation_metrics[1])
+                self.epoch_list.append(epoch)
+                plot(self.ax, self.epoch_list, self.train_loss_list, self.val_loss_list, self.val_accu_list,
+                     self.val_kappa_list, epoch,
+                     epoch_validation_metrics[0], epoch_validation_metrics[1], epoch_training_loss,
+                     epoch_validation_loss)
+            store_training_logs.store_logs(epoch, epoch_validation_metrics[0], epoch_validation_metrics[1],
+                                           epoch_training_loss, epoch_validation_loss,
+                                           epoch_training_loss / epoch_validation_loss)
