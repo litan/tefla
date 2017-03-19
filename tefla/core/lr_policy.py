@@ -23,6 +23,12 @@ class NoEpochUpdateMixin(object):
 
 
 class NoDecayPolicy(InitialLrMixin, NoBatchUpdateMixin, NoEpochUpdateMixin):
+    def resume_lr(self, start_epoch, n_iter_per_epoch, resume_lr):
+        if resume_lr is not None:
+            return float(resume_lr)
+        else:
+            return self.initial_lr
+
     def __str__(self):
         return 'NoDecayPolicy(rate=%s)' % str(self.initial_lr)
 
