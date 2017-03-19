@@ -87,11 +87,11 @@ class SupervisedTrainerQ(object):
 
     def _setup_input_queue(self):
         if self.classification:
-            self.input_queue = tf.FIFOQueue(self.num_batchs_in_epoch, dtypes=[tf.float32, tf.int32])
+            self.input_queue = tf.FIFOQueue(20, dtypes=[tf.float32, tf.int32])
             self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.int32)
         else:
-            self.input_queue = tf.FIFOQueue(self.num_batchs_in_epoch, dtypes=[tf.float32, tf.float32])
+            self.input_queue = tf.FIFOQueue(20, dtypes=[tf.float32, tf.float32])
             self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.float32)
 
@@ -117,7 +117,7 @@ class SupervisedTrainerQ(object):
                          feed_dict={self.batch_X: batch_data[0],
                                     self.batch_y: self._adjust_ground_truth(batch_data[1])})
 
-    def _enqueue_data(self, sess, coord, data_set, start_epoch):
+    def _start_enqueuing_data(self, sess, coord, data_set, start_epoch):
         t = threading.Thread(target=self._enqueue_thread_fn,
                              args=(sess, coord, start_epoch, data_set))
         t.start()
@@ -154,7 +154,7 @@ class SupervisedTrainerQ(object):
             self.seed_delta = 100
             training_history = []
             tviz = TrainViz(visuals)
-            self._enqueue_data(sess, coord, data_set, start_epoch)
+            self._start_enqueuing_data(sess, coord, data_set, start_epoch)
             try:
                 for epoch in moves.xrange(start_epoch, self.num_epochs + 1):
                     # np.random.seed(epoch + self.seed_delta)
