@@ -88,36 +88,42 @@ class SupervisedTrainerQ(object):
     def _setup_input_queue(self):
         if self.classification:
             self.input_queue = tf.FIFOQueue(self.num_batchs_in_epoch, dtypes=[tf.float32, tf.int32])
-            self.batch_x = tf.placeholder(tf.float32)
+            self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.int32)
         else:
             self.input_queue = tf.FIFOQueue(self.num_batchs_in_epoch, dtypes=[tf.float32, tf.float32])
-            self.batch_x = tf.placeholder(tf.float32)
+            self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.float32)
 
-        self.enqueue_op = self.input_queue.enqueue([self.batch_x, self.batch_y])
+        self.enqueue_op = self.input_queue.enqueue([self.batch_X, self.batch_y])
 
-    def _enqueue_thread_fn(self, sess, coord, batches):
-        for batch_data in batches:
-            if coord.should_stop():
-                return
-            sess.run(self.enqueue_op,
-                     feed_dict={self.batch_x: batch_data[0], self.batch_y: self._adjust_ground_truth(batch_data[1])})
+    def _enqueue_thread_fn(self, sess, coord, start_epoch, data_set):
+        training_X, training_y, validation_X, validation_y = \
+            data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
 
-    def _enqueue_data(self, sess, coord, iterable):
-        iterator = iter(iterable)
-        batch_data = next(iterator)
-        sess.run(self.enqueue_op,
-                 feed_dict={self.batch_x: batch_data[0], self.batch_y: self._adjust_ground_truth(batch_data[1])})
+        for epoch in moves.xrange(start_epoch, self.num_epochs + 1):
+            np.random.seed(epoch + self.seed_delta)
+            for batch_data in self.training_iterator(training_X, training_y):
+                if coord.should_stop():
+                    return
+                sess.run(self.enqueue_op,
+                         feed_dict={self.batch_X: batch_data[0],
+                                    self.batch_y: self._adjust_ground_truth(batch_data[1])})
 
+            for batch_data in self.validation_iterator(validation_X, validation_y):
+                if coord.should_stop():
+                    return
+                sess.run(self.enqueue_op,
+                         feed_dict={self.batch_X: batch_data[0],
+                                    self.batch_y: self._adjust_ground_truth(batch_data[1])})
+
+    def _enqueue_data(self, sess, coord, data_set, start_epoch):
         t = threading.Thread(target=self._enqueue_thread_fn,
-                             args=(sess, coord, iterator))
+                             args=(sess, coord, start_epoch, data_set))
         t.start()
 
     def _train_loop(self, data_set, weights_from, weights_exclude_scopes, start_epoch, resume_lr,
                     summary_every, verbose, clean, visuals):
-        training_X, training_y, validation_X, validation_y = \
-            data_set.training_X, data_set.training_y, data_set.validation_X, data_set.validation_y
         saver = tf.train.Saver(max_to_keep=None)
         weights_dir = "weights"
         if not os.path.exists(weights_dir):
@@ -145,18 +151,18 @@ class SupervisedTrainerQ(object):
             train_writer, validation_writer = _create_summary_writer(self.cnf.get('summary_dir'),
                                                                      sess, clean)
 
-            seed_delta = 100
+            self.seed_delta = 100
             training_history = []
             tviz = TrainViz(visuals)
+            self._enqueue_data(sess, coord, data_set, start_epoch)
             try:
                 for epoch in moves.xrange(start_epoch, self.num_epochs + 1):
-                    np.random.seed(epoch + seed_delta)
-                    tf.set_random_seed(epoch + seed_delta)
+                    # np.random.seed(epoch + self.seed_delta)
+                    tf.set_random_seed(epoch + self.seed_delta)
                     tic = time.time()
                     training_losses = []
                     batch_train_sizes = []
 
-                    self._enqueue_data(sess, coord, self.training_iterator(training_X, training_y))
                     for batch_num in range(1, batch_iters_per_epoch + 1):
                         feed_dict_train = {self.learning_rate: learning_rate_value}
                         logger.debug('1. Loading batch %d data done.' % batch_num)
@@ -212,18 +218,13 @@ class SupervisedTrainerQ(object):
                     epoch_validation_metrics = []
                     batch_validation_sizes = []
 
-                    t = threading.Thread(target=self._enqueue_thread_fn,
-                                         args=(sess, coord, self.validation_iterator(validation_X, validation_y)))
-                    t.start()
-
                     for batch_num in range(1, self.num_val_batchs_in_epoch + 1):
                         logger.debug('6. Loading batch %d validation data done.' % batch_num)
                         if (epoch - 1) % summary_every == 0 and batch_num < 2:
                             logger.debug('7. Running validation steps with summary...')
                             validation_predictions_e, validation_loss_e, summary_str_validate, validation_Xb, validation_yb \
-                                = sess.run(
-                                [self.validation_predictions, self.validation_loss, validation_batch_summary_op,
-                                 self.inputs, self.target])
+                                = sess.run([self.validation_predictions, self.validation_loss,
+                                            validation_batch_summary_op, self.inputs, self.target])
                             validation_writer.add_summary(summary_str_validate, epoch)
                             validation_writer.flush()
                             logger.debug('7. Running validation steps with summary done.')
@@ -370,6 +371,7 @@ class SupervisedTrainerQ(object):
         self.training_end_points = self.model(is_training=True, reuse=None, inputs=self.inputs)
         training_logits, self.training_predictions = self.training_end_points['logits'], self.training_end_points[
             'predictions']
+
         self.validation_end_points = self.model(is_training=False, reuse=True, inputs=self.inputs)
         validation_logits, self.validation_predictions = self.validation_end_points['logits'], \
                                                          self.validation_end_points[
@@ -389,6 +391,7 @@ class SupervisedTrainerQ(object):
     def _setup_regression_predictions_and_loss(self):
         self.inputs, self.target = self.input_queue.dequeue()
         self.num_batch_elems = tf.size(self.target)
+        self.inputs = tf.reshape(self.inputs, self.input_shape)
         self.training_end_points = self.model(is_training=True, reuse=None, inputs=self.inputs)
         self.training_predictions = self.training_end_points['predictions']
         self.validation_end_points = self.model(is_training=False, reuse=True, inputs=self.inputs)
