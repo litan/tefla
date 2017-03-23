@@ -13,7 +13,6 @@ import skimage
 import skimage.transform
 from skimage.transform._warps_cy import _warp_fast
 
-from standardizer import *
 from tefla.core.data_load_ops import *
 
 no_augmentation_params = {
@@ -35,14 +34,14 @@ def load_augmented_images(fnames, preprocessor, w, h, is_training, aug_params=no
 
 def load_augment(fname, preprocessor, w, h, is_training, aug_params=no_augmentation_params, transform=None, bbox=None,
                  fill_mode='constant', fill_mode_cval=0, standardizer=None, save_to_dir=None):
-    """Load augmented image with output shape (w, h, c)
+    """Load augmented image with output shape (h, w, c)
 
-    Default arguments return non augmented image of shape (w, h, c).
+    Default arguments return non augmented image of shape (h, w, c).
     To apply a fixed transform (and color augmentation) specify transform (and color_vec in standardizer).
     To generate a random augmentation specify aug_params (and sigma in standardizer).
     """
     img = _load_image_th(fname, preprocessor)
-    # img shape - (c, w, h)
+    # img shape - (c, h, w)
 
     if bbox is not None:
         img = _definite_crop(img, bbox)
@@ -68,7 +67,7 @@ def load_augment(fname, preprocessor, w, h, is_training, aug_params=no_augmentat
     if standardizer is not None:
         img = standardizer(img, is_training)
 
-    # convert to shape (w, h, c)
+    # convert to shape (h, w, c)
     return img.transpose(1, 2, 0)
 
 
@@ -77,7 +76,7 @@ def image_no_preprocessing(fname):
 
 
 def load_images(imgs, preprocessor=image_no_preprocessing):
-    """Loads and returns images in (w, h, c) format"""
+    """Loads and returns images in (h, w, c) format"""
     return np.array([_load_image_th(f, preprocessor).transpose(1, 2, 0) for f in imgs])
 
 
@@ -91,16 +90,31 @@ def balance_per_class_indices(y, weights):
                             p=np.array(p) / p.sum())
 
 
+def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False):
+    if flip:
+        shear += 180
+        rotation += 180
+        # shear by 180 degrees is equivalent to rotation by 180 degrees + flip.
+        # So after that we rotate it another 180 degrees to get just the flip.
+
+    tform_augment = skimage.transform.AffineTransform(scale=(1 / zoom[0], 1 / zoom[1]), rotation=np.deg2rad(rotation),
+                                                      shear=np.deg2rad(shear), translation=translation)
+    return tform_augment
+
+
 # internal stuff below
 
 def _load_image_th(img, preprocessor=image_no_preprocessing):
-    """Load an image and return it in (c, w, h) format"""
+    """Laad an image and return it in (c, h, w) format"""
     if isinstance(img, basestring):
         p_img = preprocessor(img)
         # PIL loaded image, size = (w, h)
         # numpy image from PIL image, shape = (h, w, c)
-        # after transpose, shape = (c, w, h)
-        return np.array(p_img, dtype=np.float32).transpose(2, 1, 0)
+        # after transpose, shape = (c, h, w)
+        np_img = np.array(p_img, dtype=np.float32)
+        if len(np_img.shape) == 2:
+            np_img = np.expand_dims(np_img, axis=2)
+        return np_img.transpose(2, 0, 1)
     elif isinstance(img, np.ndarray):
         return preprocessor(img)
     else:
@@ -108,8 +122,8 @@ def _load_image_th(img, preprocessor=image_no_preprocessing):
 
 
 def _save_image_th(x, fname):
-    """Save an image supplied in (c, w, h) format"""
-    x = x.transpose(2, 1, 0)
+    """Save an image supplied in (c, h, w) format"""
+    x = x.transpose(1, 2, 0)
     img = Image.fromarray(x.astype('uint8'), 'RGB')
     print("Saving file: %s" % fname)
     img.save(fname)
@@ -143,18 +157,6 @@ def _build_center_uncenter_transforms(image_shape):
     tform_uncenter = skimage.transform.SimilarityTransform(translation=-center_shift)
     tform_center = skimage.transform.SimilarityTransform(translation=center_shift)
     return tform_center, tform_uncenter
-
-
-def build_augmentation_transform(zoom=(1.0, 1.0), rotation=0, shear=0, translation=(0, 0), flip=False):
-    if flip:
-        shear += 180
-        rotation += 180
-        # shear by 180 degrees is equivalent to rotation by 180 degrees + flip.
-        # So after that we rotate it another 180 degrees to get just the flip.
-
-    tform_augment = skimage.transform.AffineTransform(scale=(1 / zoom[0], 1 / zoom[1]), rotation=np.deg2rad(rotation),
-                                                      shear=np.deg2rad(shear), translation=translation)
-    return tform_augment
 
 
 def _random_perturbation_transform(zoom_range, rotation_range, shear_range, translation_range, do_flip=True,

@@ -57,7 +57,7 @@ def create_training_iters(cnf, data_set, crop_size, epoch, parallel):
 
     validation_iterator = validation_iterator_maker(
         batch_size=cnf['batch_size_test'],
-        shuffle=True,
+        shuffle=False,
         preprocessor=preprocessor,
         crop_size=crop_size,
         is_training=False,

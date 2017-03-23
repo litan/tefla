@@ -87,11 +87,11 @@ class SupervisedTrainerQ(object):
 
     def _setup_input_queue(self):
         if self.classification:
-            self.input_queue = tf.FIFOQueue(20, dtypes=[tf.float32, tf.int32])
+            self.input_queue = tf.FIFOQueue(5, dtypes=[tf.float32, tf.int32])
             self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.int32)
         else:
-            self.input_queue = tf.FIFOQueue(20, dtypes=[tf.float32, tf.float32])
+            self.input_queue = tf.FIFOQueue(5, dtypes=[tf.float32, tf.float32])
             self.batch_X = tf.placeholder(tf.float32)
             self.batch_y = tf.placeholder(tf.float32)
 

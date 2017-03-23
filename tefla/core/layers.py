@@ -58,7 +58,7 @@ def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm
     with tf.variable_scope(name, reuse=reuse) as curr_scope:
         shape = [n_input, n_output] if hasattr(w_init, '__call__') else None
         W = tf.get_variable(
-            name='weights',
+            name='W',
             shape=shape,
             initializer=w_init,
             regularizer=w_regularizer,
@@ -68,7 +68,7 @@ def fully_connected(x, n_output, is_training, reuse, activation=None, batch_norm
 
         if use_bias:
             b = tf.get_variable(
-                name='biases',
+                name='b',
                 shape=[n_output],
                 initializer=tf.constant_initializer(b_init),
                 trainable=trainable
@@ -98,7 +98,7 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
         shape = [filter_size[0], filter_size[1], x.get_shape()[-1], n_output_channels] if hasattr(w_init,
                                                                                                   '__call__') else None
         W = tf.get_variable(
-            name='weights',
+            name='W',
             shape=shape,
             initializer=w_init,
             regularizer=w_regularizer,
@@ -124,7 +124,7 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
         if use_bias:
             if untie_biases:
                 b = tf.get_variable(
-                    name='biases',
+                    name='b',
                     shape=output.get_shape()[1:],
                     initializer=tf.constant_initializer(b_init),
                     trainable=trainable
@@ -132,7 +132,7 @@ def conv2d(x, n_output_channels, is_training, reuse, filter_size=(3, 3), stride=
                 output = tf.add(output, b)
             else:
                 b = tf.get_variable(
-                    name='biases',
+                    name='b',
                     shape=[n_output_channels],
                     initializer=tf.constant_initializer(b_init),
                     trainable=trainable
