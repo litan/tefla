@@ -4,11 +4,11 @@ from __future__ import division, print_function, absolute_import
 import collections
 
 import tensorflow as tf
-from tensorflow.contrib.layers import utils
+from tensorflow.contrib.layers.python.layers import utils
 
 from tefla.core.layer_arg_ops import common_layer_args, make_args, end_points
 from tefla.core.layers import input, conv2d, max_pool, softmax, batch_norm_tf
-from tefla.core.layers import relu, _collect_named_outputs
+from tefla.core.layers import relu, collect_named_outputs
 
 
 class Block(collections.namedtuple('Block', ['scope', 'unit_fn', 'args'])):
@@ -68,7 +68,7 @@ def bottleneck(inputs, depth, depth_bottleneck, stride, rate=1,
         # not in endpoints. does that matter?
         output = tf.nn.relu(shortcut + residual)
 
-        return _collect_named_outputs(common_args['outputs_collections'],
+        return collect_named_outputs(common_args['outputs_collections'],
                                       sc.name,
                                       output)
 
@@ -107,7 +107,7 @@ def stack_blocks_dense(net, blocks, output_stride=None,
                                             rate=1,
                                             **common_args)
                         current_stride *= unit_stride
-            net = _collect_named_outputs(common_args['outputs_collections'], sc.name, net)
+            net = collect_named_outputs(common_args['outputs_collections'], sc.name, net)
     if output_stride is not None and current_stride != output_stride:
         raise ValueError('The target output_stride cannot be reached.')
 
