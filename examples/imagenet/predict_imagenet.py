@@ -1,14 +1,11 @@
-import os
-
 import click
 import numpy as np
 
-from tefla.core.iter_ops import create_prediction_iter, convert_preprocessor
+from imagenet_classes import class_names
+from tefla.core.iter_ops import create_prediction_iter
 from tefla.core.prediction import QuasiCropPredictor, TenCropPredictor, OneCropPredictor
 from tefla.da import data
-from tefla.da.standardizer import NoOpStandardizer
 from tefla.utils import util
-from imagenet_classes import class_names
 
 
 @click.command()
