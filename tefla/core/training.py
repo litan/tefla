@@ -428,6 +428,7 @@ class TrainViz(object):
             self.epoch_list = []
             plt.ion()
             self.f, self.ax = plt.subplots(3, 1)
+            self.f.subplots_adjust(hspace=.7)
             red_line = mlines.Line2D([], [], color='red', markersize=15, label='Training loss')
             green_line = mlines.Line2D([], [], color='green', markersize=15, label='Validation loss')
             self.ax[0].legend(handles=[red_line, green_line], prop={'size': 8})
