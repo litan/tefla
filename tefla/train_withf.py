@@ -42,8 +42,8 @@ def main(model, training_cnf, data_dir, start_epoch, resume_lr, weights_from, cl
     data_set = DataSet(data_dir, model_def.image_size[0])
     training_iter = BatchIterator(cnf['batch_size_train'], True)
     validation_iter = BatchIterator(cnf['batch_size_test'], True)
-    trainer = SupervisedTrainer(model, cnf, training_iter, validation_iter, classification=cnf['classification'])
-    trainer.fit(data_set, weights_from, start_epoch, resume_lr, verbose=1,
+    trainer = SupervisedTrainer(model, cnf, None, training_iter, validation_iter, classification=cnf['classification'])
+    trainer.fit(data_set, weights_from, None, start_epoch, resume_lr, verbose=1,
                 summary_every=cnf.get('summary_every', 10), clean=clean, visuals=visuals)
 
 
