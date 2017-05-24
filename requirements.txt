@@ -9,16 +9,16 @@
 # sudo apt-get install libjpeg-dev
 #pip install this file using: pip install -r requirements.txt
 # Then install tensorflow r1.0
-numpy==1.12.0
-matplotlib==1.5.3
-scipy==0.18.0
-pandas==0.18.1
+numpy==1.12.1
+matplotlib==2.0.2
+scipy==0.19.0
+pandas==0.20.1
 SharedArray==1.0
 click==6.6
-scikit-image==0.12.3
+scikit-image==0.13.0
 scikit-learn==0.18.1
 six==1.10.0
 jupyter==1.0.0
 ghalton==0.6
-Pillow==2.3.0
-psutil==5.0.0
+Pillow==4.1.1
+psutil==5.2.2
