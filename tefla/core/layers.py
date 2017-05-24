@@ -260,7 +260,7 @@ def feature_max_pool_1d(x, stride=2, outputs_collections=None, name='feature_max
 
 def batch_norm_tf(x, scale=False, updates_collections=None, name='BatchNorm', **kwargs):
     outputs_collection = kwargs.pop('outputs_collections', None)
-    output = tf.contrib.layers.batch_norm(x, scope=name, scale=scale, outputs_collections=None,
+    output = tf.contrib.layers.batch_norm(x, scope=name, scale=scale, outputs_collections="temp",
                                           updates_collections=updates_collections, **kwargs)
     return _collect_named_outputs(outputs_collection, output.aliases[0], name, output)
 
